@@ -25,14 +25,13 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Jost:100,200,300,400,500,600,700,800,900,100i,200i,300i,400i,500i,600i,700i,800i,900i&display=swap"></noscript>
   <link rel="preload" as="style" href="assets/mobirise/css/mbr-additional.css"><link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css" type="text/css">
   
-  
-  
-  
+
 </head>
-<body onload="sortTable()">
-  
-  <section data-bs-version="5.1" class="menu menu1 cid-t7ZMXmxzi7" once="menu" id="menu1-8">
-    
+
+
+<body onload="inizializza()">
+
+  <section data-bs-version="5.1" class="menu menu1 cid-t7ZMXmxzi7" once="menu" id="menu1-8">  
     <nav class="navbar navbar-dropdown navbar-fixed-top navbar-expand-lg">
         <div class="container">
             <div class="navbar-brand">
@@ -41,14 +40,23 @@
             </div>
         </div>
     </nav>
-</section>
+  </section>
 
 <section data-bs-version="5.1" class="content4 cid-t7ZY9nEtMY" id="content4-11">
-    
+  <div class="container">
+    <div class="row">
+      <div class="card col-12 col-md-6">
+        <input type="text" id="myInput" onkeyup="myFilter()" placeholder="Cerca per cognome" title="Inserisci il cognome" class="form-control">
+      </div>
+    </div>
+  </div>
 </section>
 
 
-    <div class="container">
+
+<section data-bs-version="5.1" class="features7 cid-t7ZP0kdx81" id="features8-b">
+  <!---->
+      <div class="container">
         <div class="row">
             <table id="myTable">
             <div class="card col-12 col-md-6">
@@ -447,6 +455,7 @@
         </table>
         </div>
     </div>
+  </section>
 
     <script>
         function sortTable() {
@@ -483,6 +492,33 @@
             }
           }
         }
+
+
+        function myFilter() {
+          var input, filter, table, tr, td, i, txtValue;
+          input = document.getElementById("myInput");
+          filter = input.value.toUpperCase();
+          table = document.getElementById("myTable");
+          tr = table.getElementsByTagName("tr");
+          for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+              txtValue = td.textContent || td.innerText;
+              if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                 tr[i].style.display = "";
+              } else {
+                tr[i].style.display = "none";
+              }
+            }       
+          }
+        }
+
+        function inizializza() {
+          sortTable()
+          var input = document.getElementById("myInput").focus();
+        }
+
+    
         </script>
 
 
