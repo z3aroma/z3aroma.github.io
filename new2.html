@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Condominio Z3A</title>
+    <meta name="description" content="Elenco citofoni Condominio comparto Z3A - Roma">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+        h1 {
+            font-size: 2rem;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .table-container {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-semibold text-gray-700">Condominio Z3A</h1>
+
+        <div class="table-container mt-6">
+            <table id="citofoni-table" class="min-w-full bg-white border-collapse table-auto">
+                <thead>
+                    <tr>
+                        <th class="border-b-2 py-2 text-left text-gray-600 font-medium">Nominativo</th>
+                        <th class="border-b-2 py-2 text-left text-gray-600 font-medium">Codice Citofono</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Qui verranno caricate le righe del CSV -->
+                </tbody>
+            </table>
+        </div>
+
+        <footer class="text-center mt-8">
+            <p class="text-gray-600">Elenco citofoni del Condominio Z3A, Roma</p>
+        </footer>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Script per CSV -->
+    <script src="js/jquery.csv.min.js"></script>
+    <script src="js/csv_to_html_table.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            CsvToHtmlTable.init({
+                csv_path: "data/citofoni_z3a.csv",
+                element: "citofoni-table",
+                allow_download: false,
+                csv_options: {
+                    separator: ";"
+                },
+                datatables_options: {
+                    paging: false,
+                    searching: true,
+                    order: [[0, "asc"]],
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
