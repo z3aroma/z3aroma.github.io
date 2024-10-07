@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Condominio Z3A</title>
+    <meta name="description" content="Elenco citofoni Condominio comparto Z3A - Roma">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQfQ65NiTZ6tnVoFj5a1aAiuS4RoA04jRJKnZmqme4CWNIpR8cN6ckNd" crossorigin="anonymous">
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+
+    <style>
+        /* Personalizza per mobile */
+        .table-responsive {
+            margin-top: 20px;
+        }
+        h1 {
+            font-size: 1.8rem;
+        }
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <main class="row">
+            <div class="col">
+                <h1 class="text-center my-4">Condominio Z3A</h1>
+
+                <!-- Tabella con ricerca e ordinamento -->
+                <div class="table-responsive">
+                    <table id="citofoni-table" class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nominativo</th>
+                                <th>Codice Citofono</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Qui verranno caricate le righe del CSV -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center my-4">
+            <hr>
+            <p>Elenco citofoni del Condominio Z3A, Roma</p>
+        </footer>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-q3rBDNY0wFpShY9wGbF8Y4SeKzDf6vyTmGbUuTI+8/cy4z2yfha/6aVAbpZ3JXG8" crossorigin="anonymous"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- Script per CSV -->
+    <script src="js/jquery.csv.min.js"></script>
+    <script src="js/csv_to_html_table.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Inizializza la tabella con DataTables
+            $('#citofoni-table').DataTable({
+                paging: false,
+                info: false,
+                language: {
+                    search: "Cerca:",
+                    zeroRecords: "Nessun risultato trovato",
+                    lengthMenu: "Mostra _MENU_ righe",
+                    infoEmpty: "Nessun dato disponibile"
+                },
+                order: [[0, 'asc']] // Ordina per nominativo
+            });
+
+            // Carica il CSV e popola la tabella
+            CsvToHtmlTable.init({
+                csv_path: "data/citofoni_z3a.csv",
+                element: "citofoni-table",
+                allow_download: false,
+                csv_options: {
+                    separator: ";"
+                },
+                datatables_options: {
+                    paging: false,
+                    searching: true,
+                    order: [[0, "asc"]], // Ordina per nome
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
