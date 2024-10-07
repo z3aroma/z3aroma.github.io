@@ -13,6 +13,7 @@
 
     #root {
       height: 100%;
+      padding: 20px;
     }
 
     .sort-buttons {
@@ -52,106 +53,69 @@
       border-radius: 5px;
     }
 
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-
-    li {
-      background: white;
-      margin: 10px;
-      padding: 15px;
-      border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-
-    h2 {
-      font-size: 18px;
-      margin: 0;
-    }
-
-    p {
-      font-size: 14px;
-      margin: 5px 0 0;
+    #table-container {
+      margin-top: 20px;
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/csv-to-html-table@1.0.0/csv-to-html-table.min.js"></script>
 </head>
 <body>
-  <div id="root"></div>
-  <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/react-papaparse@3.7.0/umd/react-papaparse.min.js"></script>
+  <div id="root">
+    <h1>Elenco citofoni Z3A</h1>
+    <input type="text" id="search-input" placeholder="Cerca per cognome o codice citofono">
+    <div class="sort-buttons">
+      <button id="sort-cognome">Ordina per Cognome</button>
+      <button id="sort-codice">Ordina per Codice Citofono</button>
+    </div>
+    <div id="table-container"></div>
+  </div>
+
   <script>
-    const { useState, useEffect } = React;
-    const { readRemoteFile } = window.reactPapaParse;
-
-    const App = () => {
-      const [searchText, setSearchText] = useState('');
-      const [citofoni, setCitofoni] = useState([]);
-      const [loading, setLoading] = useState(true);
-      const [error, setError] = useState(null);
-
-      // Read data from CSV file using Papaparse
-      useEffect(() => {
-        readRemoteFile('data/citofoni_z3a.csv', {
-          header: true,
-          complete: (result) => {
-            setCitofoni(result.data);
-            setLoading(false);
-          },
-          error: (err) => {
-            setError('Errore nel caricamento del file CSV');
-            setLoading(false);
-          },
-        });
-      }, []);
-
-      // Function to handle sorting
-      const sortBy = (key) => {
-        setCitofoni((prevCitofoni) => [...prevCitofoni].sort((a, b) => (a[key] > b[key] ? 1 : -1)));
-      };
-
-      // Filter citofoni based on search
-      const filteredCitofoni = citofoni.filter((citofono) =>
-        citofono.cognome && citofono.codice &&
-        (citofono.cognome.toLowerCase().includes(searchText.toLowerCase()) ||
-         citofono.codice.toLowerCase().includes(searchText.toLowerCase()))
-      );
-
-      if (loading) {
-        return <div>Caricamento in corso...</div>;
+    CsvToHtmlTable.init({
+      csv_path: "data/citofoni_z3a.csv",
+      element: "#table-container",
+      allow_download: false,
+      csv_options: {
+        separator: ";"
+      },
+      datatables_options: {
+        paging: false
       }
+    });
 
-      if (error) {
-        return <div>{error}</div>;
-      }
+    document.getElementById('search-input').addEventListener('input', function() {
+      const searchText = this.value.toLowerCase();
+      $('#table-container table tbody tr').each(function() {
+        const cognome = $(this).find('td:eq(0)').text().toLowerCase();
+        const codice = $(this).find('td:eq(1)').text().toLowerCase();
+        if (cognome.includes(searchText) || codice.includes(searchText)) {
+          $(this).show();
+        } else {
+          $(this).hide();
+        }
+      });
+    });
 
-      return (
-        React.createElement('div', null,
-          React.createElement('h1', null, 'Elenco citofoni Z3A'),
-          React.createElement('input', {
-            type: 'text',
-            value: searchText,
-            onChange: (e) => setSearchText(e.target.value),
-            placeholder: 'Cerca per cognome o codice citofono'
-          }),
-          React.createElement('div', { className: "sort-buttons" },
-            React.createElement('button', { onClick: () => sortBy('cognome') }, "Ordina per Cognome"),
-            React.createElement('button', { onClick: () => sortBy('codice') }, "Ordina per Codice Citofono")
-          ),
-          React.createElement('ul', null,
-            filteredCitofoni.map((citofono, index) => (
-              React.createElement('li', { key: index },
-                React.createElement('h2', null, citofono.cognome),
-                React.createElement('p', null, `Codice Citofono: ${citofono.codice}`)
-              )
-            ))
-          )
-        )
-      );
-    };
+    document.getElementById('sort-cognome').addEventListener('click', function() {
+      sortTable(0);
+    });
 
-    ReactDOM.render(React.createElement(App), document.getElementById('root'));
+    document.getElementById('sort-codice').addEventListener('click', function() {
+      sortTable(1);
+    });
+
+    function sortTable(columnIndex) {
+      const rows = $('#table-container table tbody tr').get();
+      rows.sort(function(a, b) {
+        const A = $(a).children('td').eq(columnIndex).text().toUpperCase();
+        const B = $(b).children('td').eq(columnIndex).text().toUpperCase();
+        return A < B ? -1 : A > B ? 1 : 0;
+      });
+      $.each(rows, function(index, row) {
+        $('#table-container table').children('tbody').append(row);
+      });
+    }
   </script>
 </body>
 </html>
