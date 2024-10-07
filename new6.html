@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elenco citofoni Z3A</title>
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/react-papaparse@3.7.0/umd/react-papaparse.min.js"></script>
+  <script>
+    const { useState, useEffect } = React;
+    const { readRemoteFile } = window.reactPapaParse;
+
+    const App = () => {
+      const [searchText, setSearchText] = useState('');
+      const [citofoni, setCitofoni] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+
+      // Read data from CSV file using Papaparse
+      useEffect(() => {
+        readRemoteFile('data/citofoni_z3a.csv', {
+          header: true,
+          complete: (result) => {
+            setCitofoni(result.data);
+            setLoading(false);
+          },
+          error: (err) => {
+            setError('Errore nel caricamento del file CSV');
+            setLoading(false);
+          },
+        });
+      }, []);
+
+      // Function to handle sorting
+      const sortBy = (key) => {
+        setCitofoni((prevCitofoni) => [...prevCitofoni].sort((a, b) => (a[key] > b[key] ? 1 : -1)));
+      };
+
+      // Filter citofoni based on search
+      const filteredCitofoni = citofoni.filter((citofono) =>
+        citofono.cognome && citofono.codice &&
+        (citofono.cognome.toLowerCase().includes(searchText.toLowerCase()) ||
+         citofono.codice.toLowerCase().includes(searchText.toLowerCase()))
+      );
+
+      if (loading) {
+        return <div>Caricamento in corso...</div>;
+      }
+
+      if (error) {
+        return <div>{error}</div>;
+      }
+
+      return (
+        React.createElement('div', null,
+          React.createElement('h1', null, 'Elenco citofoni Z3A'),
+          React.createElement('input', {
+            type: 'text',
+            value: searchText,
+            onChange: (e) => setSearchText(e.target.value),
+            placeholder: 'Cerca per cognome o codice citofono'
+          }),
+          React.createElement('div', { className: "sort-buttons" },
+            React.createElement('button', { onClick: () => sortBy('cognome') }, "Ordina per Cognome"),
+            React.createElement('button', { onClick: () => sortBy('codice') }, "Ordina per Codice Citofono")
+          ),
+          React.createElement('ul', null,
+            filteredCitofoni.map((citofono, index) => (
+              React.createElement('li', { key: index },
+                React.createElement('h2', null, citofono.cognome),
+                React.createElement('p', null, `Codice Citofono: ${citofono.codice}`)
+              )
+            ))
+          )
+        )
+      );
+    };
+
+    ReactDOM.render(React.createElement(App), document.getElementById('root'));
+  </script>
+</body>
+</html>
