@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elenco citofoni Z3A</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f8f8f8;
+    }
+
+    #root {
+      height: 100%;
+      padding: 20px;
+    }
+
+    .sort-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin: 10px 0;
+    }
+
+    .sort-buttons button {
+      padding: 10px 15px;
+      font-size: 16px;
+      border: none;
+      background-color: #007aff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .sort-buttons button:hover {
+      background-color: #005bb5;
+    }
+
+    h1 {
+      font-size: 24px;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    input[type="text"] {
+      display: block;
+      width: calc(100% - 40px);
+      margin: 20px auto;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #table-container {
+      margin-top: 20px;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/csv-to-html-table@1.0.0/csv-to-html-table.min.js"></script>
+</head>
+<body>
+  <div id="root">
+    <h1>Elenco citofoni Z3A</h1>
+    <input type="text" id="search-input" placeholder="Cerca per cognome o codice citofono">
+    <div class="sort-buttons">
+      <button id="sort-cognome">Ordina per Cognome</button>
+      <button id="sort-codice">Ordina per Codice Citofono</button>
+    </div>
+    <div id="table-container"></div>
+  </div>
+
+  <script>
+    CsvToHtmlTable.init({
+      csv_path: "data/citofoni_z3a.csv",
+      element: "#table-container",
+      allow_download: false,
+      csv_options: {
+        separator: ";"
+      },
+      datatables_options: {
+        paging: false
+      }
+    });
+
+    document.getElementById('search-input').addEventListener('input', function() {
+      const searchText = this.value.toLowerCase();
+      $('#table-container table tbody tr').each(function() {
+        const cognome = $(this).find('td:eq(0)').text().toLowerCase();
+        const codice = $(this).find('td:eq(1)').text().toLowerCase();
+        if (cognome.includes(searchText) || codice.includes(searchText)) {
+          $(this).show();
+        } else {
+          $(this).hide();
+        }
+      });
+    });
+
+    document.getElementById('sort-cognome').addEventListener('click', function() {
+      sortTable(0);
+    });
+
+    document.getElementById('sort-codice').addEventListener('click', function() {
+      sortTable(1);
+    });
+
+    function sortTable(columnIndex) {
+      const rows = $('#table-container table tbody tr').get();
+      rows.sort(function(a, b) {
+        const A = $(a).children('td').eq(columnIndex).text().toUpperCase();
+        const B = $(b).children('td').eq(columnIndex).text().toUpperCase();
+        return A < B ? -1 : A > B ? 1 : 0;
+      });
+      $.each(rows, function(index, row) {
+        $('#table-container table').children('tbody').append(row);
+      });
+    }
+  </script>
+</body>
+</html>
