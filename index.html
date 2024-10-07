@@ -217,9 +217,12 @@
             );
 
             filteredData.sort((a, b) => {
-                const compareValue = currentSort.field === 'surname' 
-                    ? a.surname.localeCompare(b.surname) 
-                    : a.intercom.localeCompare(b.intercom);
+                let compareValue;
+                if (currentSort.field === 'surname') {
+                    compareValue = a.surname.localeCompare(b.surname);
+                } else {
+                    compareValue = parseInt(a.intercom, 10) - parseInt(b.intercom, 10); // Ordinamento numerico per citofono
+                }
                 return currentSort.order === 'asc' ? compareValue : -compareValue;
             });
 
