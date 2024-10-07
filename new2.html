@@ -7,35 +7,91 @@
     <title>Condominio Z3A</title>
     <meta name="description" content="Elenco citofoni Condominio comparto Z3A - Roma">
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Import Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
+    <!-- Import Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
         }
-        h1 {
-            font-size: 2rem;
+
+        .header {
+            background: linear-gradient(to right, #4f46e5, #3b82f6);
+            color: white;
+            padding: 20px;
             text-align: center;
-            margin-top: 20px;
+            border-radius: 15px;
         }
+
         .table-container {
-            margin-top: 20px;
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+        }
+
+        th {
+            background: #f3f4f6;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .search-container {
+            margin-top: 15px;
+            text-align: right;
+        }
+
+        .search-input {
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            outline: none;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
         }
     </style>
 </head>
 
-<body class="bg-gray-100">
+<body class="bg-gray-50">
+
+    <header class="header">
+        <h1 class="text-3xl font-semibold">Condominio Z3A</h1>
+        <p class="mt-2 text-base">Elenco citofoni - Roma</p>
+    </header>
 
     <div class="container mx-auto p-4">
-        <h1 class="text-3xl font-semibold text-gray-700">Condominio Z3A</h1>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Cerca nominativo..." class="search-input">
+        </div>
 
         <div class="table-container mt-6">
-            <table id="citofoni-table" class="min-w-full bg-white border-collapse table-auto">
+            <table id="citofoni-table" class="min-w-full bg-white">
                 <thead>
                     <tr>
-                        <th class="border-b-2 py-2 text-left text-gray-600 font-medium">Nominativo</th>
-                        <th class="border-b-2 py-2 text-left text-gray-600 font-medium">Codice Citofono</th>
+                        <th class="text-gray-600">Nominativo</th>
+                        <th class="text-gray-600">Codice Citofono</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -43,11 +99,11 @@
                 </tbody>
             </table>
         </div>
-
-        <footer class="text-center mt-8">
-            <p class="text-gray-600">Elenco citofoni del Condominio Z3A, Roma</p>
-        </footer>
     </div>
+
+    <footer>
+        <p>Elenco citofoni del Condominio Z3A, Roma</p>
+    </footer>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -55,9 +111,8 @@
     <!-- Script per CSV -->
     <script src="js/jquery.csv.min.js"></script>
     <script src="js/csv_to_html_table.js"></script>
-
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             CsvToHtmlTable.init({
                 csv_path: "data/citofoni_z3a.csv",
                 element: "citofoni-table",
@@ -70,6 +125,14 @@
                     searching: true,
                     order: [[0, "asc"]],
                 }
+            });
+
+            // Implementazione ricerca client-side
+            $('#searchInput').on('input', function () {
+                let value = $(this).val().toLowerCase();
+                $('#citofoni-table tbody tr').filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
             });
         });
     </script>
