@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Condominio Z3A</title>
+    <meta content="Elenco citofoni Condominio comparto Z3A - Roma">
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/5.5.2/ionicons.min.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8f8f8;
+        }
+
+        #root {
+            height: 100%;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #table-container {
+            margin-top: 20px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        table.dataTable {
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        table.dataTable thead {
+            background-color: #007aff;
+            color: white;
+        }
+
+        table.dataTable tbody tr:hover {
+            background-color: #f0f0f5;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 10px;
+            background-color: #007aff;
+            color: white !important;
+            margin: 2px;
+            padding: 6px 12px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background-color: #005bb5;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <main class="row">
+            <div class="col">
+                <h1>Condominio Z3A</h1>
+                <div id="table-container"></div>
+            </div>
+        </main>
+        <footer class="row">
+            <div class="col">
+                <hr>
+                <p>&copy; 2024 Condominio Z3A. Tutti i diritti riservati.</p>
+            </div>
+        </footer>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.2.1/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+    <script src="js/jquery.csv.min.js"></script>
+    <script src="js/csv_to_html_table.js"></script>
+
+    <script>
+        CsvToHtmlTable.init({
+            csv_path: "data/citofoni_z3a.csv",
+            element: "#table-container",
+            allow_download: false,
+            csv_options: {
+                separator: ";"
+            },
+            datatables_options: {
+                paging: false,
+                searching: true,
+                info: false,
+                responsive: true
+            }
+        });
+    </script>
+</body>
+
+</html>
