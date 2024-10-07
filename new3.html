@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Condominio Z3A</title>
+    <meta name="description" content="Elenco citofoni Condominio comparto Z3A - Roma">
+
+    <!-- Import Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Import Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .header {
+            background: linear-gradient(to right, #4f46e5, #3b82f6);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 15px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            border-spacing: 0;
+            width: 100%;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+        }
+
+        th {
+            background: #f3f4f6;
+            text-align: left;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .search-container {
+            margin-top: 15px;
+            text-align: right;
+        }
+
+        .search-input {
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            outline: none;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+
+    <header class="header">
+        <h1 class="text-3xl font-semibold">Condominio Z3A</h1>
+        <p class="mt-2 text-base">Elenco citofoni - Roma</p>
+    </header>
+
+    <div class="container mx-auto p-4">
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Cerca nominativo..." class="search-input">
+        </div>
+
+        <div class="table-container mt-6">
+            <table id="citofoni-table" class="min-w-full bg-white">
+                <thead>
+                    <tr>
+                        <th data-sort="0" class="text-gray-600">Nominativo</th>
+                        <th data-sort="1" class="text-gray-600">Codice Citofono</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Qui verranno caricate le righe del CSV -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        <p>Elenco citofoni del Condominio Z3A, Roma</p>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Script per CSV -->
+    <script src="js/jquery.csv.min.js"></script>
+    <script src="js/csv_to_html_table.js"></script>
+    <script>
+        $(document).ready(function () {
+            CsvToHtmlTable.init({
+                csv_path: "data/citofoni_z3a.csv",
+                element: "citofoni-table",
+                allow_download: false,
+                csv_options: {
+                    separator: ";"
+                },
+                datatables_options: {
+                    paging: false,
+                    searching: true,
+                    order: [[0, "asc"]],
+                }
+            });
+
+            // Implementazione ricerca client-side
+            $('#searchInput').on('input', function () {
+                let value = $(this).val().toLowerCase();
+                $('#citofoni-table tbody tr').filter(function () {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+
+            // Implementazione ordinamento delle colonne
+            $('th').on('click', function () {
+                const index = $(this).data('sort');
+                const rows = $('#citofoni-table tbody tr').toArray().sort((a, b) => {
+                    const valA = $(a).children('td').eq(index).text().toUpperCase();
+                    const valB = $(b).children('td').eq(index).text().toUpperCase();
+                    return valA.localeCompare(valB);
+                });
+                this.asc = !this.asc;
+                if (!this.asc) {
+                    rows.reverse();
+                }
+                $('#citofoni-table tbody').empty().html(rows);
+            });
+        });
+    </script>
+</body>
+
+</html>
