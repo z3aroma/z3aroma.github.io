@@ -1,111 +1,157 @@
 <!DOCTYPE html>
-<html lang="it">
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Condominio Z3A</title>
-    <meta name="description" content="Elenco citofoni Condominio comparto Z3A - Roma">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elenco citofoni Z3A</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #f8f8f8;
+    }
 
-    <!-- Materialize CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    #root {
+      height: 100%;
+    }
 
-    <!-- DataTables Material Design -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.material.min.css">
+    .sort-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin: 10px 0;
+    }
 
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-        }
-        h1 {
-            font-size: 2.2rem;
-            font-weight: 500;
-            text-align: center;
-            margin-top: 30px;
-        }
-        .table-container {
-            margin-top: 20px;
-        }
-        table {
-            width: 100%;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-        }
-    </style>
+    .sort-buttons button {
+      padding: 10px 15px;
+      font-size: 16px;
+      border: none;
+      background-color: #007aff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .sort-buttons button:hover {
+      background-color: #005bb5;
+    }
+
+    h1 {
+      font-size: 24px;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    input[type="text"] {
+      display: block;
+      width: calc(100% - 40px);
+      margin: 20px auto;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      background: white;
+      margin: 10px;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    p {
+      font-size: 14px;
+      margin: 5px 0 0;
+    }
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>Condominio Z3A</h1>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/react-papaparse@3.7.0/umd/react-papaparse.min.js"></script>
+  <script>
+    const { useState, useEffect } = React;
+    const { readRemoteFile } = window.reactPapaParse;
 
-        <div class="table-container">
-            <table id="citofoni-table" class="highlight responsive-table">
-                <thead>
-                    <tr>
-                        <th>Nominativo</th>
-                        <th>Codice Citofono</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Qui verranno caricate le righe del CSV -->
-                </tbody>
-            </table>
-        </div>
+    const App = () => {
+      const [searchText, setSearchText] = useState('');
+      const [citofoni, setCitofoni] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
 
-        <footer class="footer">
-            <p>Elenco citofoni del Condominio Z3A, Roma</p>
-        </footer>
-    </div>
-
-    <!-- Materialize JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.material.min.js"></script>
-
-    <!-- Script per CSV -->
-    <script src="js/jquery.csv.min.js"></script>
-    <script src="js/csv_to_html_table.js"></script>
-
-    <script>
-        $(document).ready(function() {
-            // Inizializza la tabella con DataTables
-            $('#citofoni-table').DataTable({
-                paging: false,
-                info: false,
-                language: {
-                    search: "Cerca:",
-                    zeroRecords: "Nessun risultato trovato",
-                },
-                order: [[0, 'asc']],
-                columnDefs: [{
-                    className: 'dt-head-left',
-                    targets: [0, 1]
-                }]
-            });
-
-            // Carica il CSV e popola la tabella
-            CsvToHtmlTable.init({
-                csv_path: "data/citofoni_z3a.csv",
-                element: "citofoni-table",
-                allow_download: false,
-                csv_options: {
-                    separator: ";"
-                },
-                datatables_options: {
-                    paging: false,
-                    searching: true,
-                    order: [[0, "asc"]],
-                }
-            });
+      // Read data from CSV file using Papaparse
+      useEffect(() => {
+        readRemoteFile('data/citofoni_z3a.csv', {
+          header: true,
+          complete: (result) => {
+            setCitofoni(result.data);
+            setLoading(false);
+          },
+          error: (err) => {
+            setError('Errore nel caricamento del file CSV');
+            setLoading(false);
+          },
         });
-    </script>
-</body>
+      }, []);
 
+      // Function to handle sorting
+      const sortBy = (key) => {
+        setCitofoni((prevCitofoni) => [...prevCitofoni].sort((a, b) => (a[key] > b[key] ? 1 : -1)));
+      };
+
+      // Filter citofoni based on search
+      const filteredCitofoni = citofoni.filter((citofono) =>
+        citofono.cognome && citofono.codice &&
+        (citofono.cognome.toLowerCase().includes(searchText.toLowerCase()) ||
+         citofono.codice.toLowerCase().includes(searchText.toLowerCase()))
+      );
+
+      if (loading) {
+        return <div>Caricamento in corso...</div>;
+      }
+
+      if (error) {
+        return <div>{error}</div>;
+      }
+
+      return (
+        React.createElement('div', null,
+          React.createElement('h1', null, 'Elenco citofoni Z3A'),
+          React.createElement('input', {
+            type: 'text',
+            value: searchText,
+            onChange: (e) => setSearchText(e.target.value),
+            placeholder: 'Cerca per cognome o codice citofono'
+          }),
+          React.createElement('div', { className: "sort-buttons" },
+            React.createElement('button', { onClick: () => sortBy('cognome') }, "Ordina per Cognome"),
+            React.createElement('button', { onClick: () => sortBy('codice') }, "Ordina per Codice Citofono")
+          ),
+          React.createElement('ul', null,
+            filteredCitofoni.map((citofono, index) => (
+              React.createElement('li', { key: index },
+                React.createElement('h2', null, citofono.cognome),
+                React.createElement('p', null, `Codice Citofono: ${citofono.codice}`)
+              )
+            ))
+          )
+        )
+      );
+    };
+
+    ReactDOM.render(React.createElement(App), document.getElementById('root'));
+  </script>
+</body>
 </html>
