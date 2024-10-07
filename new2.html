@@ -45,6 +45,7 @@
             background: #f3f4f6;
             text-align: left;
             font-weight: bold;
+            cursor: pointer;
         }
 
         tr:nth-child(even) {
@@ -90,8 +91,8 @@
             <table id="citofoni-table" class="min-w-full bg-white">
                 <thead>
                     <tr>
-                        <th class="text-gray-600">Nominativo</th>
-                        <th class="text-gray-600">Codice Citofono</th>
+                        <th data-sort="0" class="text-gray-600">Nominativo</th>
+                        <th data-sort="1" class="text-gray-600">Codice Citofono</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -133,6 +134,21 @@
                 $('#citofoni-table tbody tr').filter(function () {
                     $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
                 });
+            });
+
+            // Implementazione ordinamento delle colonne
+            $('th').on('click', function () {
+                const index = $(this).data('sort');
+                const rows = $('#citofoni-table tbody tr').toArray().sort((a, b) => {
+                    const valA = $(a).children('td').eq(index).text().toUpperCase();
+                    const valB = $(b).children('td').eq(index).text().toUpperCase();
+                    return valA.localeCompare(valB);
+                });
+                this.asc = !this.asc;
+                if (!this.asc) {
+                    rows.reverse();
+                }
+                $('#citofoni-table tbody').empty().html(rows);
             });
         });
     </script>
