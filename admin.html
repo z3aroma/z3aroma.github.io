@@ -224,29 +224,42 @@
     <script>
         // Configurazione
         const PASSWORD = 'Gatto7Roma3Stelle9Luna2Casa'; // Password di accesso
-        // Token GitHub criptato con AES (sicuro)
-        const ENCRYPTED_TOKEN = 'U2FsdGVkX1/L+M1Ad+UWG3SngXEctgdRc3zUKEJuX9edd5DYlz5ulwvv0inDREzdekvfgSXKW9oLI01M9H4ivQ==';
-        const REPO_OWNER = 'z3aroma';
-        const REPO_NAME = 'z3aroma.github.io';
-        const CSV_PATH = 'data/citofoni_z3a.csv';
         
-        let GITHUB_TOKEN = null; // Sarà popolato dopo la decriptazione
+        // Dati criptati con AES (sicuro)
+        const ENCRYPTED_TOKEN = 'U2FsdGVkX1/L+M1Ad+UWG3SngXEctgdRc3zUKEJuX9edd5DYlz5ulwvv0inDREzdekvfgSXKW9oLI01M9H4ivQ==';
+        const ENCRYPTED_REPO_OWNER = 'U2FsdGVkX18ng1Ff4E8dtj8ajLBOFNc++8saBqc/c88=';
+        const ENCRYPTED_REPO_NAME = 'U2FsdGVkX1/HB47l1wLYUcI9Rd+q4bEB3HUqOPXySAzu/5D96zRYp3Iuu5lGP49z';
+        const ENCRYPTED_CSV_PATH = 'U2FsdGVkX18ObJTo3ZJpVdoA0Kqp5e85kFRRwdRwIaLvVlGmU/Mu6IpokC2GghX0';
+        
+        // Variabili che saranno popolate dopo la decriptazione
+        let GITHUB_TOKEN = null;
+        let REPO_OWNER = null;
+        let REPO_NAME = null;
+        let CSV_PATH = null;
         let csvData = [];
         let isLoggedIn = false;
         
-        // Funzione di login con decriptazione del token
+        // Funzione di login con decriptazione di tutti i dati
         function login() {
             const password = document.getElementById('passwordInput').value;
             
             try {
-                // Tenta di decriptare il token con la password
-                const decrypted = CryptoJS.AES.decrypt(ENCRYPTED_TOKEN, password);
-                const token = decrypted.toString(CryptoJS.enc.Utf8);
+                // Tenta di decriptare tutti i dati con la password
+                const decryptedToken = CryptoJS.AES.decrypt(ENCRYPTED_TOKEN, password).toString(CryptoJS.enc.Utf8);
+                const decryptedOwner = CryptoJS.AES.decrypt(ENCRYPTED_REPO_OWNER, password).toString(CryptoJS.enc.Utf8);
+                const decryptedRepo = CryptoJS.AES.decrypt(ENCRYPTED_REPO_NAME, password).toString(CryptoJS.enc.Utf8);
+                const decryptedPath = CryptoJS.AES.decrypt(ENCRYPTED_CSV_PATH, password).toString(CryptoJS.enc.Utf8);
                 
                 // Verifica che il token sia valido
-                if (token && token.startsWith('ghp_')) {
-                    // Password corretta, token decriptato con successo
-                    GITHUB_TOKEN = token;
+                if (decryptedToken && decryptedToken.startsWith('ghp_')) {
+                    // Password corretta, tutti i dati decriptati con successo
+                    GITHUB_TOKEN = decryptedToken;
+                    REPO_OWNER = decryptedOwner;
+                    REPO_NAME = decryptedRepo;
+                    CSV_PATH = decryptedPath;
+                    
+                    console.log('Configurazione decriptata con successo');
+                    
                     isLoggedIn = true;
                     document.getElementById('loginContainer').style.display = 'none';
                     document.getElementById('adminPanel').style.display = 'block';
@@ -257,6 +270,7 @@
                 }
             } catch (e) {
                 // Errore di decriptazione = password errata
+                console.error('Errore decriptazione:', e);
                 showLoginError();
             }
         }
@@ -272,7 +286,11 @@
         // Funzione di logout
         function logout() {
             isLoggedIn = false;
-            GITHUB_TOKEN = null; // Pulisce il token dalla memoria
+            // Pulisce tutti i dati sensibili dalla memoria
+            GITHUB_TOKEN = null;
+            REPO_OWNER = null;
+            REPO_NAME = null;
+            CSV_PATH = null;
             document.getElementById('loginContainer').style.display = 'block';
             document.getElementById('adminPanel').style.display = 'none';
             document.getElementById('passwordInput').value = '';
