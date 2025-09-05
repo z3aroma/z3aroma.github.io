@@ -1,0 +1,14 @@
+# Ensure CSV files always use LF line endings
+*.csv text eol=lf
+
+# Ensure JS/HTML/CSS files use LF
+*.js text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+
+# Images are binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary

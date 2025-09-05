@@ -266,8 +266,7 @@ function parseCSV(content) {
         if (parts.length >= 2) {
             state.data.current.push({
                 cognome: parts[0].trim(),
-                citofono: parts[1].trim(),
-                lineNumber: i + 1  // CSV line number (line 2 is first data row after header)
+                citofono: parts[1].trim()
             });
         }
     }
@@ -277,12 +276,14 @@ async function saveChanges(commitMessage) {
     showLoading(true);
     
     try {
-        // Sort data by lineNumber to preserve original CSV order
-        const sortedData = [...state.data.current].sort((a, b) => 
-            (a.lineNumber || 999999) - (b.lineNumber || 999999)
-        );
+        // Sort data by citofono number to maintain consistent order
+        const sortedData = [...state.data.current].sort((a, b) => {
+            const numA = parseInt(a.citofono) || 0;
+            const numB = parseInt(b.citofono) || 0;
+            return numA - numB;
+        });
         
-        // Build CSV content preserving exact format
+        // Build CSV content with LF line endings
         let csvContent = 'COGNOME;CITOFONO\n';
         sortedData.forEach(row => {
             csvContent += `${row.cognome};${row.citofono}\n`;
@@ -505,14 +506,10 @@ function addRow() {
     saveUndoState();
     
     const newIndex = state.data.current.length;
-    // Calculate next line number (max existing + 1, or start from 2 if empty)
-    const maxLineNumber = state.data.current.reduce((max, row) => 
-        Math.max(max, row.lineNumber || 1), 1);
     
     state.data.current.push({
         cognome: 'NUOVO COGNOME',
-        citofono: '000',
-        lineNumber: maxLineNumber + 1
+        citofono: '000'
     });
     
     markAsModified();
@@ -703,29 +700,35 @@ function getChanges() {
         modified: []
     };
     
-    // Find removed and modified entries by line number
+    // Create maps for easier comparison
+    const origMap = new Map();
+    state.data.original.forEach(row => {
+        origMap.set(row.citofono, row);
+    });
+    
+    const currMap = new Map();
+    state.data.current.forEach(row => {
+        currMap.set(row.citofono, row);
+    });
+    
+    // Find removed entries
     state.data.original.forEach(orig => {
-        // First check if same line number exists
-        const sameLine = state.data.current.find(curr => curr.lineNumber === orig.lineNumber);
-        
-        if (!sameLine) {
-            // Line was completely removed
+        if (!currMap.has(orig.citofono)) {
             changes.removed.push(orig);
-        } else if (sameLine.cognome !== orig.cognome || sameLine.citofono !== orig.citofono) {
-            // Same line but content changed
-            changes.modified.push({
-                old: orig,
-                new: sameLine,
-                lineNumber: orig.lineNumber
-            });
         }
     });
     
-    // Find added entries (new lines)
+    // Find added and modified entries
     state.data.current.forEach(curr => {
-        const originalLine = state.data.original.find(orig => orig.lineNumber === curr.lineNumber);
-        if (!originalLine) {
+        const orig = origMap.get(curr.citofono);
+        if (!orig) {
             changes.added.push(curr);
+        } else if (orig.cognome !== curr.cognome) {
+            changes.modified.push({
+                old: orig,
+                new: curr,
+                citofono: curr.citofono
+            });
         }
     });
     
@@ -738,34 +741,27 @@ function generateCommitMessage() {
     
     if (changes.added.length > 0) {
         if (changes.added.length === 1) {
-            const lineNum = changes.added[0].lineNumber || 'nuova';
-            parts.push(`Riga ${lineNum}: Aggiunto ${changes.added[0].cognome} (${changes.added[0].citofono})`);
+            parts.push(`Aggiunto: ${changes.added[0].cognome} (int ${changes.added[0].citofono})`);
         } else {
-            parts.push(`Aggiunte ${changes.added.length} righe`);
+            parts.push(`Aggiunti ${changes.added.length} citofoni`);
         }
     }
     
     if (changes.removed.length > 0) {
         if (changes.removed.length === 1) {
-            parts.push(`Riga ${changes.removed[0].lineNumber}: Rimosso ${changes.removed[0].cognome} (${changes.removed[0].citofono})`);
+            parts.push(`Rimosso: ${changes.removed[0].cognome} (int ${changes.removed[0].citofono})`);
         } else {
-            parts.push(`Rimosse ${changes.removed.length} righe`);
+            parts.push(`Rimossi ${changes.removed.length} citofoni`);
         }
     }
     
     if (changes.modified.length > 0) {
         if (changes.modified.length === 1) {
             const mod = changes.modified[0];
-            if (mod.old.cognome !== mod.new.cognome && mod.old.citofono !== mod.new.citofono) {
-                parts.push(`Riga ${mod.lineNumber}: ${mod.old.cognome} (${mod.old.citofono}) → ${mod.new.cognome} (${mod.new.citofono})`);
-            } else if (mod.old.cognome !== mod.new.cognome) {
-                parts.push(`Riga ${mod.lineNumber}: Cognome ${mod.old.cognome} → ${mod.new.cognome}`);
-            } else {
-                parts.push(`Riga ${mod.lineNumber}: Citofono ${mod.old.citofono} → ${mod.new.citofono}`);
-            }
+            parts.push(`Int ${mod.citofono}: ${mod.old.cognome} → ${mod.new.cognome}`);
         } else {
-            const lineNumbers = changes.modified.map(m => m.lineNumber).join(', ');
-            parts.push(`Modificate righe: ${lineNumbers}`);
+            const citofoni = changes.modified.map(m => m.citofono).join(', ');
+            parts.push(`Modificati citofoni: ${citofoni}`);
         }
     }
     
