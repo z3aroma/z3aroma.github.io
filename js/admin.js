@@ -23,7 +23,8 @@ const state = {
         current: [],
         original: [],
         undoStack: [],
-        redoStack: []
+        redoStack: [],
+        displayOrder: []  // Array of indices for visual sorting
     },
     ui: {
         editingRow: null,
@@ -127,8 +128,8 @@ function login() {
 function logout() {
     state.session.isLoggedIn = false;
     state.github = { token: null, owner: null, repo: null, path: null, currentSHA: null };
-    state.data = { current: [], original: [], undoStack: [], redoStack: [] };
-    state.ui = { editingRow: null, deleteRowIndex: null, hasUnsavedChanges: false };
+    state.data = { current: [], original: [], undoStack: [], redoStack: [], displayOrder: [] };
+    state.ui = { editingRow: null, deleteRowIndex: null, hasUnsavedChanges: false, sortColumn: null, sortDirection: 'asc' };
     clearTimeout(state.session.timer);
     
     elements.loginContainer.style.display = 'block';
@@ -220,6 +221,7 @@ async function loadData() {
         
         parseCSV(content);
         state.data.original = JSON.parse(JSON.stringify(state.data.current));
+        state.data.displayOrder = []; // Reset display order to natural order
         
         await getLastCommitInfo();
         renderTable();
@@ -342,27 +344,29 @@ function sortData(column) {
         state.ui.sortDirection = 'asc';
     }
     
-    // Create indexed array to maintain original-current mapping
-    const indexedData = state.data.current.map((item, index) => ({ item, originalIndex: index }));
+    // Create array of indices for display order
+    const indices = state.data.current.map((_, index) => index);
     
-    // Sort the indexed array
-    indexedData.sort((a, b) => {
+    // Sort the indices based on data values
+    indices.sort((a, b) => {
         let compareValue = 0;
+        const itemA = state.data.current[a];
+        const itemB = state.data.current[b];
         
         if (column === 'cognome') {
-            compareValue = a.item.cognome.localeCompare(b.item.cognome, 'it');
+            compareValue = itemA.cognome.localeCompare(itemB.cognome, 'it');
         } else if (column === 'citofono') {
             // Numeric sort for citofono
-            const numA = parseInt(a.item.citofono) || 0;
-            const numB = parseInt(b.item.citofono) || 0;
+            const numA = parseInt(itemA.citofono) || 0;
+            const numB = parseInt(itemB.citofono) || 0;
             compareValue = numA - numB;
         }
         
         return state.ui.sortDirection === 'asc' ? compareValue : -compareValue;
     });
     
-    // Update current data
-    state.data.current = indexedData.map(item => item.item);
+    // Store display order without modifying actual data
+    state.data.displayOrder = indices;
     
     renderTable();
     updateSortIndicators();
@@ -395,9 +399,15 @@ function checkIfRowModified(row) {
 function renderTable() {
     elements.tableBody.innerHTML = '';
     
-    state.data.current.forEach((row, index) => {
+    // Use display order if available, otherwise natural order
+    const displayIndices = state.data.displayOrder.length > 0 
+        ? state.data.displayOrder 
+        : state.data.current.map((_, i) => i);
+    
+    displayIndices.forEach(dataIndex => {
+        const row = state.data.current[dataIndex];
         const tr = document.createElement('tr');
-        tr.id = `row-${index}`;
+        tr.id = `row-${dataIndex}`;
         
         // Check if modified - compare with original data
         const isModified = checkIfRowModified(row);
@@ -406,14 +416,14 @@ function renderTable() {
         }
         
         // Check if editing
-        if (state.ui.editingRow === index) {
+        if (state.ui.editingRow === dataIndex) {
             tr.classList.add('editing');
             tr.innerHTML = `
-                <td><input class="editable-input" type="text" id="input-cognome-${index}" value="${row.cognome}"></td>
-                <td><input class="editable-input" type="text" id="input-citofono-${index}" value="${row.citofono}"></td>
+                <td><input class="editable-input" type="text" id="input-cognome-${dataIndex}" value="${row.cognome}"></td>
+                <td><input class="editable-input" type="text" id="input-citofono-${dataIndex}" value="${row.citofono}"></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-small btn-save-row" onclick="saveRowEdit(${index})">✓ Salva</button>
+                        <button class="btn-small btn-save-row" onclick="saveRowEdit(${dataIndex})">✓ Salva</button>
                         <button class="btn-small btn-cancel" onclick="cancelRowEdit()">✗ Annulla</button>
                     </div>
                 </td>
@@ -424,8 +434,8 @@ function renderTable() {
                 <td>${row.citofono}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-small btn-edit" onclick="startRowEdit(${index})">✏️ Modifica</button>
-                        <button class="btn-small btn-delete" onclick="showDeleteModal(${index})">🗑️ Elimina</button>
+                        <button class="btn-small btn-edit" onclick="startRowEdit(${dataIndex})">✏️ Modifica</button>
+                        <button class="btn-small btn-delete" onclick="showDeleteModal(${dataIndex})">🗑️ Elimina</button>
                     </div>
                 </td>
             `;
@@ -560,6 +570,8 @@ function updateUndoRedoButtons() {
 function markAsModified() {
     state.ui.hasUnsavedChanges = JSON.stringify(state.data.current) !== JSON.stringify(state.data.original);
     updateUnsavedIndicator();
+    // Reset display order when data is modified to avoid confusion
+    state.data.displayOrder = [];
 }
 
 function updateUnsavedIndicator() {
