@@ -264,7 +264,8 @@ function parseCSV(content) {
         if (parts.length >= 2) {
             state.data.current.push({
                 cognome: parts[0].trim(),
-                citofono: parts[1].trim()
+                citofono: parts[1].trim(),
+                lineNumber: i + 1  // CSV line number (line 2 is first data row after header)
             });
         }
     }
@@ -274,9 +275,14 @@ async function saveChanges(commitMessage) {
     showLoading(true);
     
     try {
+        // Sort data by lineNumber to preserve original CSV order
+        const sortedData = [...state.data.current].sort((a, b) => 
+            (a.lineNumber || 999999) - (b.lineNumber || 999999)
+        );
+        
         // Build CSV content preserving exact format
         let csvContent = 'COGNOME;CITOFONO\n';
-        state.data.current.forEach(row => {
+        sortedData.forEach(row => {
             csvContent += `${row.cognome};${row.citofono}\n`;
         });
         csvContent = csvContent.trim(); // Remove last newline
@@ -408,7 +414,7 @@ function renderTable() {
                 <td>
                     <div class="action-buttons">
                         <button class="btn-small btn-save-row" onclick="saveRowEdit(${index})">✓ Salva</button>
-                        <button class="btn-small btn-cancel" onclick="cancelRowEdit(${index})">✗ Annulla</button>
+                        <button class="btn-small btn-cancel" onclick="cancelRowEdit()">✗ Annulla</button>
                     </div>
                 </td>
             `;
@@ -435,7 +441,7 @@ function renderTable() {
 function startRowEdit(index) {
     // Cancel any other editing row
     if (state.ui.editingRow !== null && state.ui.editingRow !== index) {
-        cancelRowEdit(state.ui.editingRow);
+        cancelRowEdit();
     }
     
     state.ui.editingRow = index;
@@ -462,6 +468,12 @@ function saveRowEdit(index) {
         return;
     }
     
+    // Validate no semicolon in inputs (CSV delimiter)
+    if (newCognome.includes(';') || newCitofono.includes(';')) {
+        showError('Il carattere ; non è permesso nei campi');
+        return;
+    }
+    
     saveUndoState();
     
     state.data.current[index].cognome = newCognome;
@@ -473,7 +485,7 @@ function saveRowEdit(index) {
     showSuccess('Modifica salvata localmente');
 }
 
-function cancelRowEdit(index) {
+function cancelRowEdit() {
     state.ui.editingRow = null;
     renderTable();
 }
@@ -483,9 +495,14 @@ function addRow() {
     saveUndoState();
     
     const newIndex = state.data.current.length;
+    // Calculate next line number (max existing + 1, or start from 2 if empty)
+    const maxLineNumber = state.data.current.reduce((max, row) => 
+        Math.max(max, row.lineNumber || 1), 1);
+    
     state.data.current.push({
         cognome: 'NUOVO COGNOME',
-        citofono: '000'
+        citofono: '000',
+        lineNumber: maxLineNumber + 1
     });
     
     markAsModified();
@@ -674,49 +691,28 @@ function getChanges() {
         modified: []
     };
     
-    // Find removed and modified entries
+    // Find removed and modified entries by line number
     state.data.original.forEach(orig => {
-        const current = state.data.current.find(curr => 
-            curr.cognome === orig.cognome && curr.citofono === orig.citofono
-        );
+        // First check if same line number exists
+        const sameLine = state.data.current.find(curr => curr.lineNumber === orig.lineNumber);
         
-        if (!current) {
-            // Check if it's modified (same citofono, different cognome or vice versa)
-            const modifiedByCitofono = state.data.current.find(curr => 
-                curr.citofono === orig.citofono && curr.cognome !== orig.cognome
-            );
-            const modifiedByCognome = state.data.current.find(curr => 
-                curr.cognome === orig.cognome && curr.citofono !== orig.citofono
-            );
-            
-            if (modifiedByCitofono) {
-                changes.modified.push({
-                    old: orig,
-                    new: modifiedByCitofono
-                });
-            } else if (modifiedByCognome) {
-                changes.modified.push({
-                    old: orig,
-                    new: modifiedByCognome
-                });
-            } else {
-                changes.removed.push(orig);
-            }
+        if (!sameLine) {
+            // Line was completely removed
+            changes.removed.push(orig);
+        } else if (sameLine.cognome !== orig.cognome || sameLine.citofono !== orig.citofono) {
+            // Same line but content changed
+            changes.modified.push({
+                old: orig,
+                new: sameLine,
+                lineNumber: orig.lineNumber
+            });
         }
     });
     
-    // Find added entries
+    // Find added entries (new lines)
     state.data.current.forEach(curr => {
-        const original = state.data.original.find(orig => 
-            orig.cognome === curr.cognome && orig.citofono === curr.citofono
-        );
-        
-        // Check if not already counted as modified
-        const isModified = changes.modified.some(m => 
-            m.new.cognome === curr.cognome && m.new.citofono === curr.citofono
-        );
-        
-        if (!original && !isModified) {
+        const originalLine = state.data.original.find(orig => orig.lineNumber === curr.lineNumber);
+        if (!originalLine) {
             changes.added.push(curr);
         }
     });
@@ -730,7 +726,8 @@ function generateCommitMessage() {
     
     if (changes.added.length > 0) {
         if (changes.added.length === 1) {
-            parts.push(`Aggiunto: ${changes.added[0].cognome} (${changes.added[0].citofono})`);
+            const lineNum = changes.added[0].lineNumber || 'nuova';
+            parts.push(`Riga ${lineNum}: Aggiunto ${changes.added[0].cognome} (${changes.added[0].citofono})`);
         } else {
             parts.push(`Aggiunte ${changes.added.length} righe`);
         }
@@ -738,7 +735,7 @@ function generateCommitMessage() {
     
     if (changes.removed.length > 0) {
         if (changes.removed.length === 1) {
-            parts.push(`Rimosso: ${changes.removed[0].cognome} (${changes.removed[0].citofono})`);
+            parts.push(`Riga ${changes.removed[0].lineNumber}: Rimosso ${changes.removed[0].cognome} (${changes.removed[0].citofono})`);
         } else {
             parts.push(`Rimosse ${changes.removed.length} righe`);
         }
@@ -747,13 +744,16 @@ function generateCommitMessage() {
     if (changes.modified.length > 0) {
         if (changes.modified.length === 1) {
             const mod = changes.modified[0];
-            if (mod.old.cognome !== mod.new.cognome) {
-                parts.push(`Modificato cognome: ${mod.old.cognome} → ${mod.new.cognome}`);
+            if (mod.old.cognome !== mod.new.cognome && mod.old.citofono !== mod.new.citofono) {
+                parts.push(`Riga ${mod.lineNumber}: ${mod.old.cognome} (${mod.old.citofono}) → ${mod.new.cognome} (${mod.new.citofono})`);
+            } else if (mod.old.cognome !== mod.new.cognome) {
+                parts.push(`Riga ${mod.lineNumber}: Cognome ${mod.old.cognome} → ${mod.new.cognome}`);
             } else {
-                parts.push(`Modificato citofono ${mod.new.cognome}: ${mod.old.citofono} → ${mod.new.citofono}`);
+                parts.push(`Riga ${mod.lineNumber}: Citofono ${mod.old.citofono} → ${mod.new.citofono}`);
             }
         } else {
-            parts.push(`Modificate ${changes.modified.length} righe`);
+            const lineNumbers = changes.modified.map(m => m.lineNumber).join(', ');
+            parts.push(`Modificate righe: ${lineNumbers}`);
         }
     }
     
@@ -761,7 +761,7 @@ function generateCommitMessage() {
         return `Aggiornamento citofoni - ${new Date().toLocaleString('it-IT')}`;
     }
     
-    return `Update citofoni_z3a.csv: ${parts.join(', ')}`;
+    return `Update citofoni_z3a.csv: ${parts.join('; ')}`;
 }
 
 // Event Listeners
@@ -813,7 +813,7 @@ function initEventListeners() {
                     break;
             }
         } else if (e.key === 'Escape' && state.ui.editingRow !== null) {
-            cancelRowEdit(state.ui.editingRow);
+            cancelRowEdit();
         }
     });
     
