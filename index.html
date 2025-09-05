@@ -203,18 +203,23 @@
         function successFunction(data) {
             intercomData = $.csv.toObjects(data, {separator: ";"});
             intercomData = intercomData.map(row => ({
-                surname: row.COGNOME,
-                intercom: row.CITOFONO
+                surname: row.COGNOME || '',
+                intercom: row.CITOFONO || ''
             }));
             renderList();
+            
+            // Registra l'event listener per il box di ricerca dopo il caricamento dei dati
+            $('#searchInput').off('input').on('input', renderList);
         }
 
         function renderList() {
-            const searchTerm = $('#searchInput').val().toLowerCase();
-            const filteredData = intercomData.filter(item =>
-                item.surname.toLowerCase().includes(searchTerm) ||
-                item.intercom.includes(searchTerm)
-            );
+            const searchTerm = $('#searchInput').val() || '';
+            const filteredData = intercomData.filter(item => {
+                if (!searchTerm) return true;
+                const searchLower = searchTerm.toLowerCase();
+                return item.surname.toLowerCase().includes(searchLower) ||
+                       item.intercom.toString().includes(searchTerm);
+            });
 
             filteredData.sort((a, b) => {
                 let compareValue;
@@ -230,7 +235,7 @@
             listElement.empty();
             filteredData.forEach(item => {
                 listElement.append(`
-                    <div class="intercom-item" onclick="showPopup('${item.surname}', '${item.intercom}')">
+                    <div class="intercom-item" data-surname="${item.surname.replace(/"/g, '&quot;')}" data-intercom="${item.intercom}">
                         <span>${item.surname}</span>
                         <span>${item.intercom}</span>
                     </div>
@@ -250,8 +255,6 @@
             $('#popup').removeClass('show');
         }
 
-        $('#searchInput').on('input', renderList);
-
         $('.sort-button').on('click', function() {
             const field = $(this).data('sort');
             if (currentSort.field === field) {
@@ -265,6 +268,13 @@
             $(this).find('.sort-icon').addClass(currentSort.order);
 
             renderList();
+        });
+
+        // Event listener delegato per gestire i click sugli elementi
+        $(document).on('click', '.intercom-item', function() {
+            const surname = $(this).data('surname');
+            const intercom = $(this).data('intercom');
+            showPopup(surname, intercom);
         });
 
         $(document).ready(function() {
