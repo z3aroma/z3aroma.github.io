@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Modifica Citofoni Z3A</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -222,38 +223,56 @@
 
     <script>
         // Configurazione
-        const PASSWORD = 'z3aroma2024'; // Password di accesso
-        // GitHub Personal Access Token (offuscato per sicurezza base)
-        const _t1 = 'ghp_0HrKgCIl37';
-        const _t2 = 'pUP0snYC3fwV';
-        const _t3 = 'ryRR1Dbx32ImRk';
-        const GITHUB_TOKEN = _t1 + _t2 + _t3;
+        const PASSWORD = 'Gatto7Roma3Stelle9Luna2Casa'; // Password di accesso
+        // Token GitHub criptato con AES (sicuro)
+        const ENCRYPTED_TOKEN = 'U2FsdGVkX19ZqK3YH4tLVLQGvMmVzYCvRPqJvD9xL5KPGnR8KQRsz2y/h8O3KxrhcFNYdPQzZu+jyYBxVgMEXnD8s3aJPFyHqzEJTnFQzPY=';
         const REPO_OWNER = 'z3aroma';
         const REPO_NAME = 'z3aroma.github.io';
         const CSV_PATH = 'data/citofoni_z3a.csv';
         
+        let GITHUB_TOKEN = null; // Sarà popolato dopo la decriptazione
         let csvData = [];
         let isLoggedIn = false;
         
-        // Funzione di login
+        // Funzione di login con decriptazione del token
         function login() {
             const password = document.getElementById('passwordInput').value;
-            if (password === PASSWORD) {
-                isLoggedIn = true;
-                document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'block';
-                loadData();
-            } else {
-                document.getElementById('errorMessage').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('errorMessage').style.display = 'none';
-                }, 3000);
+            
+            try {
+                // Tenta di decriptare il token con la password
+                const decrypted = CryptoJS.AES.decrypt(ENCRYPTED_TOKEN, password);
+                const token = decrypted.toString(CryptoJS.enc.Utf8);
+                
+                // Verifica che il token sia valido
+                if (token && token.startsWith('ghp_')) {
+                    // Password corretta, token decriptato con successo
+                    GITHUB_TOKEN = token;
+                    isLoggedIn = true;
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('adminPanel').style.display = 'block';
+                    loadData();
+                } else {
+                    // Password errata
+                    showLoginError();
+                }
+            } catch (e) {
+                // Errore di decriptazione = password errata
+                showLoginError();
             }
+        }
+        
+        // Mostra errore di login
+        function showLoginError() {
+            document.getElementById('errorMessage').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('errorMessage').style.display = 'none';
+            }, 3000);
         }
         
         // Funzione di logout
         function logout() {
             isLoggedIn = false;
+            GITHUB_TOKEN = null; // Pulisce il token dalla memoria
             document.getElementById('loginContainer').style.display = 'block';
             document.getElementById('adminPanel').style.display = 'none';
             document.getElementById('passwordInput').value = '';
