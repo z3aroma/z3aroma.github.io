@@ -861,7 +861,8 @@
                 }
                 
                 const data = await response.json();
-                const content = atob(data.content);
+                // Decode base64 with proper UTF-8 handling
+                const content = decodeURIComponent(escape(atob(data.content)));
                 
                 window.currentSHA = data.sha;
                 
@@ -1151,7 +1152,7 @@
                 });
                 csvContent = csvContent.trim();
                 
-                // Encode in base64
+                // Encode in base64 with proper UTF-8 handling
                 const encodedContent = btoa(unescape(encodeURIComponent(csvContent)));
                 
                 // Prepare commit
