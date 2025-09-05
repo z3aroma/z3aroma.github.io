@@ -700,37 +700,49 @@ function getChanges() {
         modified: []
     };
     
-    // Create maps for easier comparison
-    const origMap = new Map();
-    state.data.original.forEach(row => {
-        origMap.set(row.citofono, row);
+    // Sort both arrays by citofono to ensure consistent order
+    const origSorted = [...state.data.original].sort((a, b) => {
+        const numA = parseInt(a.citofono) || 0;
+        const numB = parseInt(b.citofono) || 0;
+        return numA - numB;
     });
     
-    const currMap = new Map();
-    state.data.current.forEach(row => {
-        currMap.set(row.citofono, row);
+    const currSorted = [...state.data.current].sort((a, b) => {
+        const numA = parseInt(a.citofono) || 0;
+        const numB = parseInt(b.citofono) || 0;
+        return numA - numB;
     });
     
-    // Find removed entries
-    state.data.original.forEach(orig => {
-        if (!currMap.has(orig.citofono)) {
-            changes.removed.push(orig);
-        }
-    });
+    // Compare arrays position by position
+    const minLength = Math.min(origSorted.length, currSorted.length);
     
-    // Find added and modified entries
-    state.data.current.forEach(curr => {
-        const orig = origMap.get(curr.citofono);
-        if (!orig) {
-            changes.added.push(curr);
-        } else if (orig.cognome !== curr.cognome) {
+    // Check for modifications in existing positions
+    for (let i = 0; i < minLength; i++) {
+        const orig = origSorted[i];
+        const curr = currSorted[i];
+        
+        if (orig.cognome !== curr.cognome || orig.citofono !== curr.citofono) {
             changes.modified.push({
                 old: orig,
                 new: curr,
-                citofono: curr.citofono
+                position: i + 1  // 1-based position for display
             });
         }
-    });
+    }
+    
+    // If current is longer, those are additions
+    if (currSorted.length > origSorted.length) {
+        for (let i = origSorted.length; i < currSorted.length; i++) {
+            changes.added.push(currSorted[i]);
+        }
+    }
+    
+    // If original is longer, those are removals
+    if (origSorted.length > currSorted.length) {
+        for (let i = currSorted.length; i < origSorted.length; i++) {
+            changes.removed.push(origSorted[i]);
+        }
+    }
     
     return changes;
 }
@@ -758,10 +770,13 @@ function generateCommitMessage() {
     if (changes.modified.length > 0) {
         if (changes.modified.length === 1) {
             const mod = changes.modified[0];
-            parts.push(`Int ${mod.citofono}: ${mod.old.cognome} → ${mod.new.cognome}`);
+            if (mod.old.citofono !== mod.new.citofono) {
+                parts.push(`Posizione ${mod.position}: citofono ${mod.old.citofono} → ${mod.new.citofono}, ${mod.old.cognome} → ${mod.new.cognome}`);
+            } else {
+                parts.push(`Int ${mod.new.citofono}: ${mod.old.cognome} → ${mod.new.cognome}`);
+            }
         } else {
-            const citofoni = changes.modified.map(m => m.citofono).join(', ');
-            parts.push(`Modificati citofoni: ${citofoni}`);
+            parts.push(`Modificate ${changes.modified.length} righe`);
         }
     }
     
