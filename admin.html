@@ -29,6 +29,15 @@
             color: white;
             padding: 20px;
             text-align: center;
+            position: relative;
+        }
+        .session-info {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            opacity: 0.8;
         }
         .login-container {
             padding: 40px;
@@ -73,6 +82,19 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+        }
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 200px;
         }
         .btn {
             padding: 10px 20px;
@@ -82,9 +104,15 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            transition: all 0.3s;
         }
         .btn:hover {
             opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         .btn-save {
             background: #007bff;
@@ -92,12 +120,27 @@
         .btn-add {
             background: #28a745;
         }
+        .btn-undo {
+            background: #6c757d;
+        }
+        .btn-redo {
+            background: #6c757d;
+        }
         .btn-logout {
             background: #dc3545;
-            margin-left: auto;
+        }
+        .unsaved-indicator {
+            display: none;
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .unsaved-indicator.show {
+            display: inline;
         }
         .table-container {
             overflow-x: auto;
+            position: relative;
         }
         table {
             width: 100%;
@@ -111,31 +154,86 @@
         th {
             background: #f8f9fa;
             font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr {
+            transition: background 0.2s;
         }
         tr:hover {
             background: #f8f9fa;
         }
-        .editable {
-            background: transparent;
-            border: 1px solid transparent;
+        tr.modified {
+            background: #fff3cd;
+        }
+        tr.editing {
+            background: #e3f2fd;
+        }
+        .view-mode {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .edit-mode {
+            display: none;
+            gap: 10px;
+        }
+        .edit-mode.active {
+            display: flex;
+        }
+        .view-mode.hidden {
+            display: none;
+        }
+        .field-value {
             padding: 8px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+        }
+        .field-value:hover {
+            background: #f0f0f0;
+            border-color: #ddd;
+        }
+        .editable-input {
+            padding: 8px;
+            border: 2px solid #007bff;
+            border-radius: 4px;
             width: 100%;
+            font-size: 14px;
         }
-        .editable:focus {
-            border: 1px solid #007bff;
-            outline: none;
-            background: white;
+        .action-buttons {
+            display: flex;
+            gap: 5px;
         }
-        .delete-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
+        .btn-small {
             padding: 5px 10px;
+            font-size: 12px;
+            border: none;
             border-radius: 3px;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        .delete-btn:hover {
-            background: #c82333;
+        .btn-edit {
+            background: #007bff;
+            color: white;
+        }
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-save-row {
+            background: #28a745;
+            color: white;
+        }
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-small:hover {
+            opacity: 0.8;
         }
         .status-message {
             padding: 10px;
@@ -171,12 +269,184 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            animation: slideIn 0.3s;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            color: #333;
+            margin: 0;
+        }
+        .modal-body {
+            margin-bottom: 25px;
+            color: #666;
+            line-height: 1.6;
+        }
+        .confirmation-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .confirmation-input.error {
+            border-color: #dc3545;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .modal-btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        .modal-btn-confirm {
+            background: #dc3545;
+            color: white;
+        }
+        .modal-btn-save {
+            background: #007bff;
+            color: white;
+        }
+        .modal-btn:hover {
+            opacity: 0.9;
+        }
+        .modal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Diff Display */
+        .diff-container {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .diff-added {
+            background: #d4edda;
+            color: #155724;
+            padding: 2px 4px;
+            margin: 2px 0;
+        }
+        .diff-removed {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 2px 4px;
+            margin: 2px 0;
+            text-decoration: line-through;
+        }
+        .diff-unchanged {
+            color: #666;
+            padding: 2px 4px;
+            margin: 2px 0;
+        }
+        
+        /* Commit Message Input */
+        .commit-message-input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        /* Last Commit Info */
+        .last-commit-info {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* Keyboard Shortcuts Help */
+        .shortcuts-help {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #333;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            display: none;
+            max-width: 250px;
+            z-index: 100;
+        }
+        .shortcuts-help.show {
+            display: block;
+        }
+        .shortcut-item {
+            margin: 5px 0;
+        }
+        .shortcut-key {
+            background: #555;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>Amministrazione Citofoni Z3A</h1>
+            <div class="session-info" id="sessionInfo"></div>
         </div>
         
         <!-- Login Form -->
@@ -194,10 +464,21 @@
             <div class="status-message status-success" id="successMessage"></div>
             <div class="status-message status-error" id="errorMessagePanel"></div>
             
+            <div class="last-commit-info" id="lastCommitInfo" style="display:none;">
+                <strong>Ultimo commit:</strong> <span id="lastCommitText"></span>
+            </div>
+            
             <div class="controls">
                 <button class="btn btn-add" onclick="addRow()">➕ Aggiungi Riga</button>
-                <button class="btn btn-save" onclick="saveChanges()">💾 Salva Modifiche</button>
-                <button class="btn btn-logout" onclick="logout()">Esci</button>
+                <button class="btn btn-save" onclick="showSaveModal()">💾 Salva Modifiche</button>
+                <span class="unsaved-indicator" id="unsavedIndicator">⚠️ Modifiche non salvate</span>
+                <button class="btn btn-undo" id="undoBtn" onclick="undo()" disabled>↶ Annulla</button>
+                <button class="btn btn-redo" id="redoBtn" onclick="redo()" disabled>↷ Ripeti</button>
+                
+                <div class="search-container">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Cerca..." onkeyup="filterTable()">
+                    <button class="btn btn-logout" onclick="showLogoutModal()">Esci</button>
+                </div>
             </div>
             
             <div class="loading" id="loading">
@@ -220,62 +501,187 @@
             </div>
         </div>
     </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Conferma Eliminazione</h2>
+            </div>
+            <div class="modal-body">
+                <p>Stai per eliminare la riga:</p>
+                <p><strong id="deleteRowInfo"></strong></p>
+                <p>Per confermare, digita <strong>ELIMINA</strong> nel campo sottostante:</p>
+                <input type="text" class="confirmation-input" id="deleteConfirmInput" placeholder="Digita ELIMINA">
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="closeDeleteModal()">Annulla</button>
+                <button class="modal-btn modal-btn-confirm" id="confirmDeleteBtn" onclick="confirmDelete()" disabled>Elimina</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Save Changes Modal -->
+    <div id="saveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Conferma Salvataggio</h2>
+            </div>
+            <div class="modal-body">
+                <p>Riepilogo delle modifiche:</p>
+                <div class="diff-container" id="diffContainer"></div>
+                <p>Messaggio di commit (personalizzabile):</p>
+                <textarea class="commit-message-input" id="commitMessageInput"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="closeSaveModal()">Annulla</button>
+                <button class="modal-btn modal-btn-save" onclick="confirmSave()">Salva e Committa</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Conferma Uscita</h2>
+            </div>
+            <div class="modal-body">
+                <p id="logoutWarning"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-cancel" onclick="closeLogoutModal()">Annulla</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmLogout()">Esci</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Keyboard Shortcuts Help -->
+    <div class="shortcuts-help" id="shortcutsHelp">
+        <div class="shortcut-item"><span class="shortcut-key">Ctrl+S</span> Salva</div>
+        <div class="shortcut-item"><span class="shortcut-key">Ctrl+Z</span> Annulla</div>
+        <div class="shortcut-item"><span class="shortcut-key">Ctrl+Y</span> Ripeti</div>
+        <div class="shortcut-item"><span class="shortcut-key">Ctrl+F</span> Cerca</div>
+        <div class="shortcut-item"><span class="shortcut-key">ESC</span> Annulla modifica</div>
+    </div>
 
     <script>
         // Configurazione
-        const PASSWORD = 'Gatto7Roma3Stelle9Luna2Casa'; // Password di accesso
+        const PASSWORD = 'Gatto7Roma3Stelle9Luna2Casa';
+        const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minuti
         
-        // Dati criptati con AES (sicuro)
+        // Dati criptati con AES
         const ENCRYPTED_TOKEN = 'U2FsdGVkX1/L+M1Ad+UWG3SngXEctgdRc3zUKEJuX9edd5DYlz5ulwvv0inDREzdekvfgSXKW9oLI01M9H4ivQ==';
         const ENCRYPTED_REPO_OWNER = 'U2FsdGVkX18ng1Ff4E8dtj8ajLBOFNc++8saBqc/c88=';
         const ENCRYPTED_REPO_NAME = 'U2FsdGVkX1/HB47l1wLYUcI9Rd+q4bEB3HUqOPXySAzu/5D96zRYp3Iuu5lGP49z';
         const ENCRYPTED_CSV_PATH = 'U2FsdGVkX18ObJTo3ZJpVdoA0Kqp5e85kFRRwdRwIaLvVlGmU/Mu6IpokC2GghX0';
         
-        // Variabili che saranno popolate dopo la decriptazione
+        // Variabili globali
         let GITHUB_TOKEN = null;
         let REPO_OWNER = null;
         let REPO_NAME = null;
         let CSV_PATH = null;
         let csvData = [];
+        let originalData = [];
         let isLoggedIn = false;
+        let hasUnsavedChanges = false;
+        let undoStack = [];
+        let redoStack = [];
+        let sessionTimer = null;
+        let loginTime = null;
+        let deleteRowIndex = null;
+        let editingRow = null;
+        let actionLog = [];
         
-        // Funzione di login con decriptazione di tutti i dati
+        // Funzione di login
         function login() {
             const password = document.getElementById('passwordInput').value;
             
             try {
-                // Tenta di decriptare tutti i dati con la password
                 const decryptedToken = CryptoJS.AES.decrypt(ENCRYPTED_TOKEN, password).toString(CryptoJS.enc.Utf8);
                 const decryptedOwner = CryptoJS.AES.decrypt(ENCRYPTED_REPO_OWNER, password).toString(CryptoJS.enc.Utf8);
                 const decryptedRepo = CryptoJS.AES.decrypt(ENCRYPTED_REPO_NAME, password).toString(CryptoJS.enc.Utf8);
                 const decryptedPath = CryptoJS.AES.decrypt(ENCRYPTED_CSV_PATH, password).toString(CryptoJS.enc.Utf8);
                 
-                // Verifica che il token sia valido
                 if (decryptedToken && decryptedToken.startsWith('ghp_')) {
-                    // Password corretta, tutti i dati decriptati con successo
                     GITHUB_TOKEN = decryptedToken;
                     REPO_OWNER = decryptedOwner;
                     REPO_NAME = decryptedRepo;
                     CSV_PATH = decryptedPath;
                     
-                    console.log('Configurazione decriptata con successo');
-                    
                     isLoggedIn = true;
+                    loginTime = new Date();
+                    startSessionTimer();
+                    logAction('Login', 'Accesso effettuato');
+                    
                     document.getElementById('loginContainer').style.display = 'none';
                     document.getElementById('adminPanel').style.display = 'block';
+                    updateSessionInfo();
                     loadData();
+                    
+                    // Show keyboard shortcuts help briefly
+                    showShortcutsHelp();
                 } else {
-                    // Password errata
                     showLoginError();
                 }
             } catch (e) {
-                // Errore di decriptazione = password errata
                 console.error('Errore decriptazione:', e);
                 showLoginError();
             }
         }
         
-        // Mostra errore di login
+        // Session management
+        function startSessionTimer() {
+            clearTimeout(sessionTimer);
+            sessionTimer = setTimeout(() => {
+                showError('Sessione scaduta per inattività');
+                logout();
+            }, SESSION_TIMEOUT);
+        }
+        
+        function resetSessionTimer() {
+            if (isLoggedIn) {
+                startSessionTimer();
+            }
+        }
+        
+        function updateSessionInfo() {
+            if (isLoggedIn && loginTime) {
+                const now = new Date();
+                const elapsed = Math.floor((now - loginTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('sessionInfo').textContent = `Sessione attiva da ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        // Activity tracking
+        document.addEventListener('click', resetSessionTimer);
+        document.addEventListener('keypress', resetSessionTimer);
+        
+        // Update session info every second
+        setInterval(updateSessionInfo, 1000);
+        
+        // Action logging
+        function logAction(action, details) {
+            actionLog.push({
+                timestamp: new Date().toISOString(),
+                action: action,
+                details: details
+            });
+            console.log('Action:', action, details);
+        }
+        
+        // Show keyboard shortcuts help
+        function showShortcutsHelp() {
+            const help = document.getElementById('shortcutsHelp');
+            help.classList.add('show');
+            setTimeout(() => {
+                help.classList.remove('show');
+            }, 5000);
+        }
+        
+        // Error handling
         function showLoginError() {
             document.getElementById('errorMessage').style.display = 'block';
             setTimeout(() => {
@@ -283,27 +689,166 @@
             }, 3000);
         }
         
-        // Funzione di logout
-        function logout() {
-            isLoggedIn = false;
-            // Pulisce tutti i dati sensibili dalla memoria
-            GITHUB_TOKEN = null;
-            REPO_OWNER = null;
-            REPO_NAME = null;
-            CSV_PATH = null;
-            document.getElementById('loginContainer').style.display = 'block';
-            document.getElementById('adminPanel').style.display = 'none';
-            document.getElementById('passwordInput').value = '';
+        function showError(message) {
+            const elem = document.getElementById('errorMessagePanel');
+            elem.textContent = message;
+            elem.style.display = 'block';
+            setTimeout(() => {
+                elem.style.display = 'none';
+            }, 5000);
         }
         
-        // Carica i dati dal CSV
+        function showSuccess(message) {
+            const elem = document.getElementById('successMessage');
+            elem.textContent = message;
+            elem.style.display = 'block';
+            setTimeout(() => {
+                elem.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Modal functions
+        function showDeleteModal(index) {
+            deleteRowIndex = index;
+            const row = csvData[index];
+            document.getElementById('deleteRowInfo').textContent = `${row.cognome} - Citofono ${row.citofono}`;
+            document.getElementById('deleteConfirmInput').value = '';
+            document.getElementById('confirmDeleteBtn').disabled = true;
+            document.getElementById('deleteModal').classList.add('show');
+            logAction('Delete Modal Opened', `Row ${index}: ${row.cognome}`);
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+            deleteRowIndex = null;
+        }
+        
+        function showSaveModal() {
+            if (!hasUnsavedChanges) {
+                showError('Non ci sono modifiche da salvare');
+                return;
+            }
+            
+            // Generate diff
+            generateDiff();
+            
+            // Set default commit message
+            const now = new Date().toLocaleString('it-IT');
+            document.getElementById('commitMessageInput').value = 
+                `Aggiornamento citofoni via admin panel - ${now}`;
+            
+            document.getElementById('saveModal').classList.add('show');
+            logAction('Save Modal Opened', 'User viewing changes');
+        }
+        
+        function closeSaveModal() {
+            document.getElementById('saveModal').classList.remove('show');
+        }
+        
+        function showLogoutModal() {
+            const warning = hasUnsavedChanges 
+                ? 'Hai modifiche non salvate. Sei sicuro di voler uscire?' 
+                : 'Sei sicuro di voler uscire?';
+            document.getElementById('logoutWarning').textContent = warning;
+            document.getElementById('logoutModal').classList.add('show');
+        }
+        
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.remove('show');
+        }
+        
+        function confirmLogout() {
+            closeLogoutModal();
+            logout();
+        }
+        
+        // Generate diff for save modal
+        function generateDiff() {
+            const diffContainer = document.getElementById('diffContainer');
+            diffContainer.innerHTML = '';
+            
+            let hasChanges = false;
+            
+            // Check for removed rows
+            originalData.forEach(orig => {
+                const exists = csvData.find(curr => 
+                    curr.cognome === orig.cognome && curr.citofono === orig.citofono
+                );
+                if (!exists) {
+                    const div = document.createElement('div');
+                    div.className = 'diff-removed';
+                    div.textContent = `- ${orig.cognome};${orig.citofono}`;
+                    diffContainer.appendChild(div);
+                    hasChanges = true;
+                }
+            });
+            
+            // Check for added or modified rows
+            csvData.forEach(curr => {
+                const orig = originalData.find(o => 
+                    o.cognome === curr.cognome && o.citofono === curr.citofono
+                );
+                if (!orig) {
+                    const div = document.createElement('div');
+                    div.className = 'diff-added';
+                    div.textContent = `+ ${curr.cognome};${curr.citofono}`;
+                    diffContainer.appendChild(div);
+                    hasChanges = true;
+                }
+            });
+            
+            if (!hasChanges) {
+                diffContainer.innerHTML = '<div class="diff-unchanged">Nessuna modifica rilevata</div>';
+            }
+        }
+        
+        // Delete confirmation input validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteInput = document.getElementById('deleteConfirmInput');
+            if (deleteInput) {
+                deleteInput.addEventListener('input', function() {
+                    const confirmBtn = document.getElementById('confirmDeleteBtn');
+                    if (this.value.toUpperCase() === 'ELIMINA') {
+                        confirmBtn.disabled = false;
+                        this.classList.remove('error');
+                    } else {
+                        confirmBtn.disabled = true;
+                        if (this.value.length > 0) {
+                            this.classList.add('error');
+                        }
+                    }
+                });
+            }
+        });
+        
+        // Confirm delete
+        function confirmDelete() {
+            if (deleteRowIndex !== null) {
+                const deletedRow = csvData[deleteRowIndex];
+                saveUndoState();
+                csvData.splice(deleteRowIndex, 1);
+                markAsModified();
+                renderTable();
+                closeDeleteModal();
+                showSuccess(`Riga eliminata: ${deletedRow.cognome}`);
+                logAction('Row Deleted', `${deletedRow.cognome} - ${deletedRow.citofono}`);
+            }
+        }
+        
+        // Confirm save
+        async function confirmSave() {
+            const commitMessage = document.getElementById('commitMessageInput').value;
+            closeSaveModal();
+            await saveChanges(commitMessage);
+        }
+        
+        // Load data from GitHub
         async function loadData() {
             if (!isLoggedIn) return;
             
             document.getElementById('loading').style.display = 'block';
             
             try {
-                // Ottieni il contenuto del file da GitHub
                 const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CSV_PATH}`, {
                     headers: {
                         'Authorization': `token ${GITHUB_TOKEN}`,
@@ -318,27 +863,58 @@
                 const data = await response.json();
                 const content = atob(data.content);
                 
-                // Salva il SHA per l'aggiornamento successivo
                 window.currentSHA = data.sha;
                 
-                // Parsa il CSV
+                // Get last commit info
+                await getLastCommitInfo();
+                
                 parseCSV(content);
+                originalData = JSON.parse(JSON.stringify(csvData));
                 renderTable();
+                
+                logAction('Data Loaded', `${csvData.length} rows loaded`);
                 
             } catch (error) {
                 console.error('Errore:', error);
-                showError('Errore nel caricamento dei dati. Verifica il token GitHub.');
+                showError('Errore nel caricamento dei dati');
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
         
-        // Parsa il CSV
+        // Get last commit info
+        async function getLastCommitInfo() {
+            try {
+                const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/commits?path=${CSV_PATH}&per_page=1`, {
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const commits = await response.json();
+                    if (commits.length > 0) {
+                        const lastCommit = commits[0];
+                        const date = new Date(lastCommit.commit.author.date).toLocaleString('it-IT');
+                        const message = lastCommit.commit.message;
+                        const author = lastCommit.commit.author.name;
+                        
+                        document.getElementById('lastCommitText').textContent = 
+                            `${message} - ${author} (${date})`;
+                        document.getElementById('lastCommitInfo').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error getting last commit:', error);
+            }
+        }
+        
+        // Parse CSV
         function parseCSV(content) {
             const lines = content.trim().split('\n');
             csvData = [];
             
-            // Salta l'header
             for (let i = 1; i < lines.length; i++) {
                 const parts = lines[i].split(';');
                 if (parts.length >= 2) {
@@ -350,74 +926,242 @@
             }
         }
         
-        // Renderizza la tabella
+        // Render table with enhanced edit functionality
         function renderTable() {
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
             
             csvData.forEach((row, index) => {
                 const tr = document.createElement('tr');
+                tr.id = `row-${index}`;
+                
+                // Check if this row was modified
+                const origRow = originalData[index];
+                if (origRow && (origRow.cognome !== row.cognome || origRow.citofono !== row.citofono)) {
+                    tr.classList.add('modified');
+                }
+                
                 tr.innerHTML = `
-                    <td><input class="editable" type="text" value="${row.cognome}" onchange="updateData(${index}, 'cognome', this.value)"></td>
-                    <td><input class="editable" type="text" value="${row.citofono}" onchange="updateData(${index}, 'citofono', this.value)"></td>
-                    <td><button class="delete-btn" onclick="deleteRow(${index})">Elimina</button></td>
+                    <td>
+                        <div class="view-mode" id="view-cognome-${index}">
+                            <span class="field-value" onclick="startEdit(${index}, 'cognome')">${row.cognome}</span>
+                        </div>
+                        <div class="edit-mode" id="edit-cognome-${index}">
+                            <input class="editable-input" type="text" id="input-cognome-${index}" value="${row.cognome}">
+                        </div>
+                    </td>
+                    <td>
+                        <div class="view-mode" id="view-citofono-${index}">
+                            <span class="field-value" onclick="startEdit(${index}, 'citofono')">${row.citofono}</span>
+                        </div>
+                        <div class="edit-mode" id="edit-citofono-${index}">
+                            <input class="editable-input" type="text" id="input-citofono-${index}" value="${row.citofono}">
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-small btn-edit" id="btn-edit-${index}" onclick="startRowEdit(${index})">✏️ Modifica</button>
+                            <button class="btn-small btn-save-row" id="btn-save-${index}" style="display:none" onclick="saveRowEdit(${index})">✓ Salva</button>
+                            <button class="btn-small btn-cancel" id="btn-cancel-${index}" style="display:none" onclick="cancelRowEdit(${index})">✗ Annulla</button>
+                            <button class="btn-small btn-delete" onclick="showDeleteModal(${index})">🗑️ Elimina</button>
+                        </div>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
+            
+            updateUndoRedoButtons();
         }
         
-        // Aggiorna i dati
-        function updateData(index, field, value) {
-            csvData[index][field] = value;
+        // Enhanced edit functions
+        function startEdit(index, field) {
+            if (editingRow !== null && editingRow !== index) {
+                cancelRowEdit(editingRow);
+            }
+            startRowEdit(index);
         }
         
-        // Aggiungi una nuova riga
+        function startRowEdit(index) {
+            if (editingRow !== null && editingRow !== index) {
+                cancelRowEdit(editingRow);
+            }
+            
+            editingRow = index;
+            const row = document.getElementById(`row-${index}`);
+            row.classList.add('editing');
+            
+            // Show edit mode for both fields
+            document.getElementById(`view-cognome-${index}`).classList.add('hidden');
+            document.getElementById(`edit-cognome-${index}`).classList.add('active');
+            document.getElementById(`view-citofono-${index}`).classList.add('hidden');
+            document.getElementById(`edit-citofono-${index}`).classList.add('active');
+            
+            // Update buttons
+            document.getElementById(`btn-edit-${index}`).style.display = 'none';
+            document.getElementById(`btn-save-${index}`).style.display = 'inline-block';
+            document.getElementById(`btn-cancel-${index}`).style.display = 'inline-block';
+            
+            // Focus first input
+            document.getElementById(`input-cognome-${index}`).focus();
+            
+            logAction('Edit Started', `Row ${index}: ${csvData[index].cognome}`);
+        }
+        
+        function saveRowEdit(index) {
+            const newCognome = document.getElementById(`input-cognome-${index}`).value;
+            const newCitofono = document.getElementById(`input-citofono-${index}`).value;
+            
+            if (newCognome.trim() === '' || newCitofono.trim() === '') {
+                showError('I campi non possono essere vuoti');
+                return;
+            }
+            
+            saveUndoState();
+            
+            csvData[index].cognome = newCognome.trim();
+            csvData[index].citofono = newCitofono.trim();
+            
+            markAsModified();
+            endRowEdit(index);
+            renderTable();
+            
+            showSuccess('Modifica salvata localmente');
+            logAction('Row Edited', `Row ${index}: ${newCognome} - ${newCitofono}`);
+        }
+        
+        function cancelRowEdit(index) {
+            endRowEdit(index);
+        }
+        
+        function endRowEdit(index) {
+            editingRow = null;
+            const row = document.getElementById(`row-${index}`);
+            if (row) {
+                row.classList.remove('editing');
+                
+                // Hide edit mode
+                document.getElementById(`view-cognome-${index}`).classList.remove('hidden');
+                document.getElementById(`edit-cognome-${index}`).classList.remove('active');
+                document.getElementById(`view-citofono-${index}`).classList.remove('hidden');
+                document.getElementById(`edit-citofono-${index}`).classList.remove('active');
+                
+                // Update buttons
+                document.getElementById(`btn-edit-${index}`).style.display = 'inline-block';
+                document.getElementById(`btn-save-${index}`).style.display = 'none';
+                document.getElementById(`btn-cancel-${index}`).style.display = 'none';
+            }
+        }
+        
+        // Add new row
         function addRow() {
+            saveUndoState();
             csvData.push({
                 cognome: 'NUOVO COGNOME',
                 citofono: '000'
             });
+            markAsModified();
             renderTable();
-            // Scrolla alla fine della tabella
-            const table = document.querySelector('.table-container');
-            table.scrollTop = table.scrollHeight;
+            
+            // Auto-start editing the new row
+            const newIndex = csvData.length - 1;
+            startRowEdit(newIndex);
+            
+            // Scroll to new row
+            const newRow = document.getElementById(`row-${newIndex}`);
+            newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            logAction('Row Added', 'New row added');
         }
         
-        // Elimina una riga
-        function deleteRow(index) {
-            if (confirm('Sei sicuro di voler eliminare questa riga?')) {
-                csvData.splice(index, 1);
+        // Undo/Redo functionality
+        function saveUndoState() {
+            undoStack.push(JSON.parse(JSON.stringify(csvData)));
+            redoStack = [];
+            updateUndoRedoButtons();
+        }
+        
+        function undo() {
+            if (undoStack.length > 0) {
+                redoStack.push(JSON.parse(JSON.stringify(csvData)));
+                csvData = undoStack.pop();
                 renderTable();
+                markAsModified();
+                updateUndoRedoButtons();
+                logAction('Undo', 'Action undone');
             }
         }
         
-        // Salva le modifiche su GitHub
-        async function saveChanges() {
-            if (!isLoggedIn) return;
+        function redo() {
+            if (redoStack.length > 0) {
+                undoStack.push(JSON.parse(JSON.stringify(csvData)));
+                csvData = redoStack.pop();
+                renderTable();
+                markAsModified();
+                updateUndoRedoButtons();
+                logAction('Redo', 'Action redone');
+            }
+        }
+        
+        function updateUndoRedoButtons() {
+            document.getElementById('undoBtn').disabled = undoStack.length === 0;
+            document.getElementById('redoBtn').disabled = redoStack.length === 0;
+        }
+        
+        // Mark as modified
+        function markAsModified() {
+            hasUnsavedChanges = JSON.stringify(csvData) !== JSON.stringify(originalData);
+            const indicator = document.getElementById('unsavedIndicator');
+            if (hasUnsavedChanges) {
+                indicator.classList.add('show');
+            } else {
+                indicator.classList.remove('show');
+            }
+        }
+        
+        // Filter/Search functionality
+        function filterTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toUpperCase();
+            const tbody = document.getElementById('tableBody');
+            const rows = tbody.getElementsByTagName('tr');
             
+            for (let i = 0; i < rows.length; i++) {
+                const cognome = csvData[i].cognome.toUpperCase();
+                const citofono = csvData[i].citofono.toUpperCase();
+                
+                if (cognome.indexOf(filter) > -1 || citofono.indexOf(filter) > -1) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+        
+        // Save changes to GitHub
+        async function saveChanges(commitMessage) {
+            if (!isLoggedIn) return;
             
             document.getElementById('loading').style.display = 'block';
             
             try {
-                // Crea il contenuto CSV
+                // Create CSV content
                 let csvContent = 'COGNOME;CITOFONO\n';
                 csvData.forEach(row => {
                     csvContent += `${row.cognome};${row.citofono}\n`;
                 });
-                // Rimuovi l'ultimo newline
                 csvContent = csvContent.trim();
                 
-                // Codifica in base64
+                // Encode in base64
                 const encodedContent = btoa(unescape(encodeURIComponent(csvContent)));
                 
-                // Prepara il commit
+                // Prepare commit
                 const commitData = {
-                    message: `Aggiornamento citofoni via admin panel - ${new Date().toLocaleString('it-IT')}`,
+                    message: commitMessage || `Aggiornamento citofoni via admin panel - ${new Date().toLocaleString('it-IT')}`,
                     content: encodedContent,
                     sha: window.currentSHA
                 };
                 
-                // Invia l'aggiornamento a GitHub
+                // Send update to GitHub
                 const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CSV_PATH}`, {
                     method: 'PUT',
                     headers: {
@@ -436,7 +1180,21 @@
                 const result = await response.json();
                 window.currentSHA = result.content.sha;
                 
-                showSuccess('Modifiche salvate con successo!');
+                // Update original data
+                originalData = JSON.parse(JSON.stringify(csvData));
+                hasUnsavedChanges = false;
+                document.getElementById('unsavedIndicator').classList.remove('show');
+                
+                // Clear undo/redo stacks
+                undoStack = [];
+                redoStack = [];
+                updateUndoRedoButtons();
+                
+                // Update last commit info
+                await getLastCommitInfo();
+                
+                showSuccess('Modifiche salvate e committate con successo!');
+                logAction('Changes Saved', commitMessage);
                 
             } catch (error) {
                 console.error('Errore:', error);
@@ -446,28 +1204,78 @@
             }
         }
         
-        // Mostra messaggio di successo
-        function showSuccess(message) {
-            const elem = document.getElementById('successMessage');
-            elem.textContent = message;
-            elem.style.display = 'block';
-            setTimeout(() => {
-                elem.style.display = 'none';
-            }, 5000);
+        // Logout
+        function logout() {
+            isLoggedIn = false;
+            GITHUB_TOKEN = null;
+            REPO_OWNER = null;
+            REPO_NAME = null;
+            CSV_PATH = null;
+            csvData = [];
+            originalData = [];
+            hasUnsavedChanges = false;
+            undoStack = [];
+            redoStack = [];
+            clearTimeout(sessionTimer);
+            
+            // Export action log before clearing
+            console.log('Session Action Log:', actionLog);
+            actionLog = [];
+            
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('passwordInput').value = '';
+            
+            logAction('Logout', 'Session ended');
         }
         
-        // Mostra messaggio di errore
-        function showError(message) {
-            const elem = document.getElementById('errorMessagePanel');
-            elem.textContent = message;
-            elem.style.display = 'block';
-            setTimeout(() => {
-                elem.style.display = 'none';
-            }, 5000);
-        }
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (!isLoggedIn) return;
+            
+            // Ctrl+S - Save
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                if (hasUnsavedChanges) {
+                    showSaveModal();
+                }
+            }
+            
+            // Ctrl+Z - Undo
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            }
+            
+            // Ctrl+Y - Redo
+            if (e.ctrlKey && e.key === 'y') {
+                e.preventDefault();
+                redo();
+            }
+            
+            // Ctrl+F - Focus search
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+            
+            // ESC - Cancel current edit
+            if (e.key === 'Escape' && editingRow !== null) {
+                cancelRowEdit(editingRow);
+            }
+        });
         
-        // Gestisci invio con Enter nella password
+        // Prevent accidental page leave with unsaved changes
+        window.addEventListener('beforeunload', function(e) {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+        
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Password field enter key
             document.getElementById('passwordInput').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     login();
