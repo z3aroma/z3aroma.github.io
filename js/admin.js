@@ -2,7 +2,6 @@
 
 // Configuration
 const CONFIG = {
-    PASSWORD: 'Gatto7Roma3Stelle9Luna2Casa',
     SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes
     ENCRYPTED_TOKEN: 'U2FsdGVkX1/L+M1Ad+UWG3SngXEctgdRc3zUKEJuX9edd5DYlz5ulwvv0inDREzdekvfgSXKW9oLI01M9H4ivQ==',
     ENCRYPTED_REPO_OWNER: 'U2FsdGVkX18ng1Ff4E8dtj8ajLBOFNc++8saBqc/c88=',
