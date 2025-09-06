@@ -256,9 +256,11 @@ function showAdminPanel() {
 }
 
 function showError(message) {
-    if (message === 'Password errata!') {
+    // Show error in login form if not logged in, otherwise in admin panel
+    if (!state.session.isLoggedIn) {
+        elements.errorMessage.textContent = message;
         elements.errorMessage.style.display = 'block';
-        setTimeout(() => elements.errorMessage.style.display = 'none', 3000);
+        setTimeout(() => elements.errorMessage.style.display = 'none', 5000);
     } else {
         elements.errorMessagePanel.textContent = message;
         elements.errorMessagePanel.style.display = 'block';
