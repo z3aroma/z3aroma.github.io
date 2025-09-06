@@ -174,11 +174,7 @@ function login() {
             state.session.isLoggedIn = true;
             state.session.loginTime = new Date();
             
-            // Save session to sessionStorage
-            sessionStorage.setItem('adminSession', JSON.stringify({
-                github: decrypted,
-                loginTime: state.session.loginTime.toISOString()
-            }));
+            // No longer saving sensitive data to sessionStorage for security
             
             startSessionTimer();
             showAdminPanel();
@@ -215,9 +211,6 @@ function logout() {
     state.data = { current: [], original: [], undoStack: [], redoStack: [], displayOrder: [] };
     state.ui = { editingRow: null, deleteRowIndex: null, deletedRows: [], hasUnsavedChanges: false, sortColumn: null, sortDirection: 'asc' };
     clearTimeout(state.session.timer);
-    
-    // Clear session from sessionStorage
-    sessionStorage.removeItem('adminSession');
     
     elements.loginContainer.style.display = 'block';
     elements.adminPanel.style.display = 'none';
@@ -1053,48 +1046,9 @@ window.redo = redo;
 window.filterTable = filterTable;
 window.sortData = sortData;
 
-// Check for existing session
-function checkExistingSession() {
-    const savedSession = sessionStorage.getItem('adminSession');
-    
-    if (savedSession) {
-        try {
-            const session = JSON.parse(savedSession);
-            const loginTime = new Date(session.loginTime);
-            const now = new Date();
-            const elapsed = now - loginTime;
-            
-            // Check if session is still valid (within 30 minutes)
-            if (elapsed < CONFIG.SESSION_TIMEOUT) {
-                // Restore session
-                state.github = session.github;
-                state.session.isLoggedIn = true;
-                state.session.loginTime = loginTime;
-                
-                startSessionTimer();
-                showAdminPanel();
-                loadData();
-                
-                return true;
-            } else {
-                // Session expired, clear it
-                sessionStorage.removeItem('adminSession');
-            }
-        } catch (e) {
-            // Invalid session data, clear it
-            sessionStorage.removeItem('adminSession');
-        }
-    }
-    
-    return false;
-}
-
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initElements();
     initEventListeners();
     setInterval(updateSessionInfo, 1000);
-    
-    // Check for existing session
-    checkExistingSession();
 });
