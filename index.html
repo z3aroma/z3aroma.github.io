@@ -86,15 +86,54 @@
             font-size: 1rem;
         }
         
+        .clear-button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #c7c7cc;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .clear-button.show {
+            display: flex;
+        }
+        
+        .clear-button:active {
+            background-color: #8e8e93;
+            transform: translateY(-50%) scale(0.9);
+        }
+        
+        .clear-button::before {
+            content: "✕";
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
         #searchInput {
             width: 100%;
             border: none;
             background-color: transparent;
             outline: none;
             font-size: 1rem;
-            padding: 0.875rem 1rem 0.875rem 2.5rem;
+            padding: 0.875rem 2.5rem 0.875rem 2.5rem;
             color: #333;
             font-weight: 400;
+        }
+        
+        #searchInput.has-text {
+            padding-right: 3rem;
         }
         
         #searchInput::placeholder {
@@ -402,6 +441,7 @@
                 <div class="search-wrapper">
                     <span class="search-icon"></span>
                     <input type="text" id="searchInput" placeholder="Cerca per nome o citofono...">
+                    <button class="clear-button" id="clearButton" onclick="clearSearch()"></button>
                 </div>
             </div>
             <div class="sort-container">
@@ -453,7 +493,10 @@
             renderList();
             
             // Registra l'event listener per il box di ricerca dopo il caricamento dei dati
-            $('#searchInput').off('input').on('input', renderList);
+            $('#searchInput').off('input').on('input', function() {
+                toggleClearButton();
+                renderList();
+            });
         }
 
         function renderList() {
@@ -501,6 +544,24 @@
             setTimeout(() => {
                 $('#popupOverlay').removeClass('show');
             }, 300);
+        }
+
+        function toggleClearButton() {
+            const hasText = $('#searchInput').val().length > 0;
+            if (hasText) {
+                $('#clearButton').addClass('show');
+                $('#searchInput').addClass('has-text');
+            } else {
+                $('#clearButton').removeClass('show');
+                $('#searchInput').removeClass('has-text');
+            }
+        }
+
+        function clearSearch() {
+            $('#searchInput').val('');
+            toggleClearButton();
+            renderList();
+            $('#searchInput').focus();
         }
 
         $('.sort-button').on('click', function() {
