@@ -39,6 +39,13 @@
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
             border-bottom-left-radius: 20px;
             border-bottom-right-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        header.scrolled {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
         h1 {
@@ -49,6 +56,19 @@
             margin: 0;
             color: #ffffff;
             letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+            opacity: 1;
+            height: auto;
+            overflow: hidden;
+        }
+        
+        header.scrolled h1 {
+            font-size: 0;
+            padding: 0;
+            opacity: 0;
+            height: 0;
+            transform: translateY(-20px);
         }
         
         .search-container {
@@ -56,6 +76,11 @@
             align-items: center;
             padding: 0 1rem 1rem;
             position: relative;
+            transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        header.scrolled .search-container {
+            padding: 0.75rem 1rem;
         }
         
         .search-wrapper {
@@ -588,6 +613,33 @@
             showPopup(surname, intercom);
         });
 
+        // Gestione scroll per header collassabile stile iOS
+        let lastScrollTop = 0;
+        let ticking = false;
+        
+        function updateHeader() {
+            const scrollTop = $('#intercomList').scrollTop();
+            const header = $('header');
+            
+            if (scrollTop > 30) {
+                header.addClass('scrolled');
+            } else {
+                header.removeClass('scrolled');
+            }
+            
+            lastScrollTop = scrollTop;
+            ticking = false;
+        }
+        
+        function requestTick() {
+            if (!ticking) {
+                window.requestAnimationFrame(updateHeader);
+                ticking = true;
+            }
+        }
+        
+        $('#intercomList').on('scroll', requestTick);
+        
         $(document).ready(function() {
             loadCSV();
         });
