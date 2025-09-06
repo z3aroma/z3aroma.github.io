@@ -36,53 +36,22 @@
             top: 0;
             z-index: 1000;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             isolation: isolate;
         }
         
         header.scrolled {
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
             box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
         }
         
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            text-align: center;
-            padding: 1.25rem 0 0.75rem;
-            margin: 0;
-            color: #ffffff;
-            letter-spacing: 0.5px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-origin: center;
-            opacity: 1;
-            height: auto;
-            overflow: hidden;
-        }
-        
-        header.scrolled h1 {
-            font-size: 0;
-            padding: 0;
-            opacity: 0;
-            height: 0;
-            transform: translateY(-20px);
-        }
         
         .search-container {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0 1rem 1rem;
+            padding: 1rem;
             position: relative;
-            transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        header.scrolled .search-container {
-            padding: 0.75rem 1rem;
         }
         
         .search-wrapper {
@@ -433,11 +402,10 @@
 <body>
     <div class="container">
         <header>
-            <h1>Elenco citofoni Z3A</h1>
             <div class="search-container">
                 <div class="search-wrapper">
                     <span class="search-icon"></span>
-                    <input type="text" id="searchInput" placeholder="Cerca..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text">
+                    <input type="text" id="searchInput" placeholder="Cerca..." autocomplete="off">
                     <button class="clear-button" id="clearButton" onclick="clearSearch()"></button>
                 </div>
                 <div class="sort-buttons">
