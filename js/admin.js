@@ -9,6 +9,34 @@ const CONFIG = {
     ENCRYPTED_CSV_PATH: 'U2FsdGVkX18ObJTo3ZJpVdoA0Kqp5e85kFRRwdRwIaLvVlGmU/Mu6IpokC2GghX0'
 };
 
+// Security Functions
+function sanitizeInput(str) {
+    // Remove dangerous characters for CSV and HTML
+    return str
+        .replace(/[<>\"'&]/g, '') // Remove HTML dangerous characters
+        .replace(/[\n\r\t]/g, '')  // Remove newlines and tabs
+        .replace(/;/g, '')         // Remove CSV delimiter
+        .trim()
+        .substring(0, 100);        // Limit length to prevent abuse
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Anti brute-force protection
+const loginAttempts = {
+    count: parseInt(localStorage.getItem('loginAttempts') || '0'),
+    blockedUntil: parseInt(localStorage.getItem('blockedUntil') || '0'),
+    lastAttempt: parseInt(localStorage.getItem('lastAttempt') || '0')
+};
+
+const MAX_LOGIN_ATTEMPTS = 5;
+const BLOCK_DURATION = 15 * 60 * 1000; // 15 minutes
+const ATTEMPT_RESET_TIME = 5 * 60 * 1000; // Reset counter after 5 minutes of inactivity
+
 // Application State
 const state = {
     github: {
@@ -97,7 +125,34 @@ function initElements() {
 
 // Authentication
 function login() {
+    // Check if blocked due to too many attempts
+    if (loginAttempts.blockedUntil > Date.now()) {
+        const minutesLeft = Math.ceil((loginAttempts.blockedUntil - Date.now()) / 60000);
+        showError(`Troppi tentativi falliti. Riprova tra ${minutesLeft} minuti.`);
+        elements.passwordInput.value = '';
+        elements.passwordInput.disabled = true;
+        setTimeout(() => {
+            elements.passwordInput.disabled = false;
+        }, 1000);
+        return;
+    }
+    
+    // Reset counter if enough time has passed since last attempt
+    if (loginAttempts.lastAttempt && (Date.now() - loginAttempts.lastAttempt) > ATTEMPT_RESET_TIME) {
+        loginAttempts.count = 0;
+        localStorage.removeItem('loginAttempts');
+    }
+    
     const password = elements.passwordInput.value;
+    
+    // Add progressive delay based on attempt number
+    const delay = Math.min(loginAttempts.count * 1000, 5000); // Max 5 seconds
+    if (delay > 0) {
+        elements.passwordInput.disabled = true;
+        setTimeout(() => {
+            elements.passwordInput.disabled = false;
+        }, delay);
+    }
     
     try {
         const decrypted = {
@@ -108,6 +163,13 @@ function login() {
         };
         
         if (decrypted.token && decrypted.token.startsWith('ghp_')) {
+            // Login successful - reset attempts
+            loginAttempts.count = 0;
+            loginAttempts.blockedUntil = 0;
+            localStorage.removeItem('loginAttempts');
+            localStorage.removeItem('blockedUntil');
+            localStorage.removeItem('lastAttempt');
+            
             state.github = decrypted;
             state.session.isLoggedIn = true;
             state.session.loginTime = new Date();
@@ -122,11 +184,29 @@ function login() {
             showAdminPanel();
             loadData();
         } else {
-            showError('Password errata!');
+            handleFailedLogin();
         }
     } catch (e) {
-        showError('Password errata!');
+        handleFailedLogin();
     }
+}
+
+function handleFailedLogin() {
+    loginAttempts.count++;
+    loginAttempts.lastAttempt = Date.now();
+    localStorage.setItem('loginAttempts', loginAttempts.count.toString());
+    localStorage.setItem('lastAttempt', loginAttempts.lastAttempt.toString());
+    
+    if (loginAttempts.count >= MAX_LOGIN_ATTEMPTS) {
+        loginAttempts.blockedUntil = Date.now() + BLOCK_DURATION;
+        localStorage.setItem('blockedUntil', loginAttempts.blockedUntil.toString());
+        showError(`Troppi tentativi falliti (${MAX_LOGIN_ATTEMPTS}). Account bloccato per 15 minuti.`);
+    } else {
+        const remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts.count;
+        showError(`Password errata! ${remainingAttempts} tentativi rimasti.`);
+    }
+    
+    elements.passwordInput.value = '';
 }
 
 function logout() {
@@ -271,9 +351,10 @@ function parseCSV(content) {
     for (let i = 1; i < lines.length; i++) {
         const parts = lines[i].split(';');
         if (parts.length >= 2) {
+            // Sanitize data when loading from CSV
             state.data.current.push({
-                cognome: parts[0].trim(),
-                citofono: parts[1].trim()
+                cognome: sanitizeInput(parts[0].trim()),
+                citofono: parts[1].trim().replace(/[^0-9]/g, '').substring(0, 3)
             });
         }
     }
@@ -444,8 +525,8 @@ function renderTable() {
         if (state.ui.editingRow === dataIndex && !isDeleted) {
             tr.classList.add('editing');
             tr.innerHTML = `
-                <td><input class="editable-input" type="text" id="input-cognome-${dataIndex}" value="${row.cognome}" placeholder="COGNOME" oninput="this.value = this.value.toUpperCase()"></td>
-                <td><input class="editable-input" type="text" id="input-citofono-${dataIndex}" value="${row.citofono}" placeholder="000" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></td>
+                <td><input class="editable-input" type="text" id="input-cognome-${dataIndex}" value="${escapeHtml(row.cognome)}" placeholder="COGNOME" oninput="this.value = this.value.toUpperCase()"></td>
+                <td><input class="editable-input" type="text" id="input-citofono-${dataIndex}" value="${escapeHtml(row.citofono)}" placeholder="000" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></td>
                 <td>
                     <div class="action-buttons">
                         <button class="btn-small btn-save-row" onclick="saveRowEdit(${dataIndex})">✓ Salva</button>
@@ -457,8 +538,8 @@ function renderTable() {
             // For deleted rows, show strikethrough text and restore button
             if (isDeleted) {
                 tr.innerHTML = `
-                    <td><s>${row.cognome}</s></td>
-                    <td><s>${row.citofono}</s></td>
+                    <td><s>${escapeHtml(row.cognome)}</s></td>
+                    <td><s>${escapeHtml(row.citofono)}</s></td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn-small btn-restore" onclick="restoreRow(${dataIndex})">↩️ Ripristina</button>
@@ -467,8 +548,8 @@ function renderTable() {
                 `;
             } else {
                 tr.innerHTML = `
-                    <td>${row.cognome}</td>
-                    <td>${row.citofono}</td>
+                    <td>${escapeHtml(row.cognome)}</td>
+                    <td>${escapeHtml(row.citofono)}</td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn-small btn-edit" onclick="startRowEdit(${dataIndex})">✏️ Modifica</button>
@@ -508,8 +589,9 @@ function saveRowEdit(index) {
     
     if (!cognomeInput || !citofonoInput) return;
     
-    const newCognome = cognomeInput.value.trim().toUpperCase();
-    const newCitofono = citofonoInput.value.trim();
+    // Sanitize inputs before processing
+    const newCognome = sanitizeInput(cognomeInput.value.toUpperCase());
+    const newCitofono = citofonoInput.value.trim().replace(/[^0-9]/g, '');
     
     if (!newCognome || !newCitofono) {
         showError('I campi non possono essere vuoti');
@@ -525,12 +607,6 @@ function saveRowEdit(index) {
     // Validate citofono is exactly 3 digits
     if (!/^\d{3}$/.test(newCitofono)) {
         showError('Il citofono deve essere esattamente 3 cifre');
-        return;
-    }
-    
-    // Validate no semicolon in inputs (CSV delimiter)
-    if (newCognome.includes(';') || newCitofono.includes(';')) {
-        showError('Il carattere ; non è permesso nei campi');
         return;
     }
     
@@ -702,7 +778,7 @@ function filterTable() {
 function showDeleteModal(index) {
     state.ui.deleteRowIndex = index;
     const row = state.data.current[index];
-    elements.deleteRowInfo.textContent = `${row.cognome} - Citofono ${row.citofono}`;
+    elements.deleteRowInfo.textContent = `${escapeHtml(row.cognome)} - Citofono ${escapeHtml(row.citofono)}`;
     elements.deleteModal.classList.add('show');
 }
 
