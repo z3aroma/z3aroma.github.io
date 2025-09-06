@@ -29,6 +29,7 @@ const state = {
     ui: {
         editingRow: null,
         deleteRowIndex: null,
+        deletedRows: [], // Track indices of deleted rows
         hasUnsavedChanges: false,
         sortColumn: null,
         sortDirection: 'asc'
@@ -62,7 +63,6 @@ const elements = {
     saveModal: null,
     logoutModal: null,
     deleteRowInfo: null,
-    deleteConfirmInput: null,
     confirmDeleteBtn: null,
     diffContainer: null,
     commitMessageInput: null,
@@ -90,7 +90,6 @@ function initElements() {
     elements.saveModal = document.getElementById('saveModal');
     elements.logoutModal = document.getElementById('logoutModal');
     elements.deleteRowInfo = document.getElementById('deleteRowInfo');
-    elements.deleteConfirmInput = document.getElementById('deleteConfirmInput');
     elements.confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     elements.diffContainer = document.getElementById('diffContainer');
     elements.commitMessageInput = document.getElementById('commitMessageInput');
@@ -114,6 +113,12 @@ function login() {
             state.session.isLoggedIn = true;
             state.session.loginTime = new Date();
             
+            // Save session to sessionStorage
+            sessionStorage.setItem('adminSession', JSON.stringify({
+                github: decrypted,
+                loginTime: state.session.loginTime.toISOString()
+            }));
+            
             startSessionTimer();
             showAdminPanel();
             loadData();
@@ -129,8 +134,11 @@ function logout() {
     state.session.isLoggedIn = false;
     state.github = { token: null, owner: null, repo: null, path: null, currentSHA: null };
     state.data = { current: [], original: [], undoStack: [], redoStack: [], displayOrder: [] };
-    state.ui = { editingRow: null, deleteRowIndex: null, hasUnsavedChanges: false, sortColumn: null, sortDirection: 'asc' };
+    state.ui = { editingRow: null, deleteRowIndex: null, deletedRows: [], hasUnsavedChanges: false, sortColumn: null, sortDirection: 'asc' };
     clearTimeout(state.session.timer);
+    
+    // Clear session from sessionStorage
+    sessionStorage.removeItem('adminSession');
     
     elements.loginContainer.style.display = 'block';
     elements.adminPanel.style.display = 'none';
@@ -276,8 +284,12 @@ async function saveChanges(commitMessage) {
     showLoading(true);
     
     try {
-        // Sort data by citofono number to maintain consistent order
-        const sortedData = [...state.data.current].sort((a, b) => {
+        // Filter out deleted rows and sort by citofono number
+        const filteredData = state.data.current.filter((row, index) => 
+            !state.ui.deletedRows.includes(index)
+        );
+        
+        const sortedData = [...filteredData].sort((a, b) => {
             const numA = parseInt(a.citofono) || 0;
             const numB = parseInt(b.citofono) || 0;
             return numA - numB;
@@ -318,8 +330,15 @@ async function saveChanges(commitMessage) {
         
         const result = await response.json();
         state.github.currentSHA = result.content.sha;
+        
+        // Remove deleted rows from current data
+        state.data.current = state.data.current.filter((row, index) => 
+            !state.ui.deletedRows.includes(index)
+        );
+        
         state.data.original = JSON.parse(JSON.stringify(state.data.current));
         state.ui.hasUnsavedChanges = false;
+        state.ui.deletedRows = []; // Reset deleted rows
         state.data.undoStack = [];
         state.data.redoStack = [];
         
@@ -410,18 +429,24 @@ function renderTable() {
         const tr = document.createElement('tr');
         tr.id = `row-${dataIndex}`;
         
+        // Check if row is marked for deletion
+        const isDeleted = state.ui.deletedRows.includes(dataIndex);
+        if (isDeleted) {
+            tr.classList.add('deleted');
+        }
+        
         // Check if modified - compare with original data
         const isModified = checkIfRowModified(row);
-        if (isModified) {
+        if (isModified && !isDeleted) {
             tr.classList.add('modified');
         }
         
         // Check if editing
-        if (state.ui.editingRow === dataIndex) {
+        if (state.ui.editingRow === dataIndex && !isDeleted) {
             tr.classList.add('editing');
             tr.innerHTML = `
-                <td><input class="editable-input" type="text" id="input-cognome-${dataIndex}" value="${row.cognome}"></td>
-                <td><input class="editable-input" type="text" id="input-citofono-${dataIndex}" value="${row.citofono}"></td>
+                <td><input class="editable-input" type="text" id="input-cognome-${dataIndex}" value="${row.cognome}" placeholder="COGNOME" oninput="this.value = this.value.toUpperCase()"></td>
+                <td><input class="editable-input" type="text" id="input-citofono-${dataIndex}" value="${row.citofono}" placeholder="000" maxlength="3" oninput="this.value = this.value.replace(/[^0-9]/g, '')"></td>
                 <td>
                     <div class="action-buttons">
                         <button class="btn-small btn-save-row" onclick="saveRowEdit(${dataIndex})">✓ Salva</button>
@@ -430,16 +455,29 @@ function renderTable() {
                 </td>
             `;
         } else {
-            tr.innerHTML = `
-                <td>${row.cognome}</td>
-                <td>${row.citofono}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn-small btn-edit" onclick="startRowEdit(${dataIndex})">✏️ Modifica</button>
-                        <button class="btn-small btn-delete" onclick="showDeleteModal(${dataIndex})">🗑️ Elimina</button>
-                    </div>
-                </td>
-            `;
+            // For deleted rows, show strikethrough text and restore button
+            if (isDeleted) {
+                tr.innerHTML = `
+                    <td><s>${row.cognome}</s></td>
+                    <td><s>${row.citofono}</s></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-small btn-restore" onclick="restoreRow(${dataIndex})">↩️ Ripristina</button>
+                        </div>
+                    </td>
+                `;
+            } else {
+                tr.innerHTML = `
+                    <td>${row.cognome}</td>
+                    <td>${row.citofono}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-small btn-edit" onclick="startRowEdit(${dataIndex})">✏️ Modifica</button>
+                            <button class="btn-small btn-delete" onclick="showDeleteModal(${dataIndex})">🗑️ Elimina</button>
+                        </div>
+                    </td>
+                `;
+            }
         }
         
         elements.tableBody.appendChild(tr);
@@ -471,11 +509,23 @@ function saveRowEdit(index) {
     
     if (!cognomeInput || !citofonoInput) return;
     
-    const newCognome = cognomeInput.value.trim();
+    const newCognome = cognomeInput.value.trim().toUpperCase();
     const newCitofono = citofonoInput.value.trim();
     
     if (!newCognome || !newCitofono) {
         showError('I campi non possono essere vuoti');
+        return;
+    }
+    
+    // Validate cognome has at least 3 characters
+    if (newCognome.length < 3) {
+        showError('Il cognome deve avere almeno 3 caratteri');
+        return;
+    }
+    
+    // Validate citofono is exactly 3 digits
+    if (!/^\d{3}$/.test(newCitofono)) {
+        showError('Il citofono deve essere esattamente 3 cifre');
         return;
     }
     
@@ -497,19 +547,28 @@ function saveRowEdit(index) {
 }
 
 function cancelRowEdit() {
+    // If canceling a new empty row, remove it
+    if (state.ui.editingRow !== null) {
+        const row = state.data.current[state.ui.editingRow];
+        if (row && row.cognome === '' && row.citofono === '') {
+            state.data.current.splice(state.ui.editingRow, 1);
+            markAsModified();
+        }
+    }
+    
     state.ui.editingRow = null;
     renderTable();
 }
 
 // Add/Delete Functions
 function addRow() {
-    saveUndoState();
+    // Don't save undo state here - wait until the row is actually saved
     
     const newIndex = state.data.current.length;
     
     state.data.current.push({
-        cognome: 'NUOVO COGNOME',
-        citofono: '000'
+        cognome: '',
+        citofono: ''
     });
     
     markAsModified();
@@ -527,23 +586,60 @@ function addRow() {
 
 function deleteRow(index) {
     saveUndoState();
-    state.data.current.splice(index, 1);
+    
+    // Mark row as deleted instead of removing it
+    if (!state.ui.deletedRows.includes(index)) {
+        state.ui.deletedRows.push(index);
+    }
+    
     markAsModified();
     renderTable();
-    showSuccess('Riga eliminata');
+    showSuccess('Riga marcata per eliminazione');
+}
+
+function restoreRow(index) {
+    // Remove from deleted rows list
+    const idx = state.ui.deletedRows.indexOf(index);
+    if (idx > -1) {
+        state.ui.deletedRows.splice(idx, 1);
+    }
+    
+    markAsModified();
+    renderTable();
+    showSuccess('Riga ripristinata');
 }
 
 // Undo/Redo
 function saveUndoState() {
-    state.data.undoStack.push(JSON.parse(JSON.stringify(state.data.current)));
+    state.data.undoStack.push({
+        data: JSON.parse(JSON.stringify(state.data.current)),
+        deletedRows: [...state.ui.deletedRows]
+    });
     state.data.redoStack = [];
     updateUndoRedoButtons();
 }
 
 function undo() {
     if (state.data.undoStack.length > 0) {
-        state.data.redoStack.push(JSON.parse(JSON.stringify(state.data.current)));
-        state.data.current = state.data.undoStack.pop();
+        // Cancel any editing in progress
+        if (state.ui.editingRow !== null) {
+            state.ui.editingRow = null;
+        }
+        
+        state.data.redoStack.push({
+            data: JSON.parse(JSON.stringify(state.data.current)),
+            deletedRows: [...state.ui.deletedRows]
+        });
+        
+        const previousState = state.data.undoStack.pop();
+        state.data.current = previousState.data;
+        state.ui.deletedRows = previousState.deletedRows || [];
+        
+        // Remove any empty rows that shouldn't be there
+        state.data.current = state.data.current.filter(row => 
+            !(row.cognome === '' && row.citofono === '')
+        );
+        
         renderTable();
         markAsModified();
     }
@@ -551,8 +647,15 @@ function undo() {
 
 function redo() {
     if (state.data.redoStack.length > 0) {
-        state.data.undoStack.push(JSON.parse(JSON.stringify(state.data.current)));
-        state.data.current = state.data.redoStack.pop();
+        state.data.undoStack.push({
+            data: JSON.parse(JSON.stringify(state.data.current)),
+            deletedRows: [...state.ui.deletedRows]
+        });
+        
+        const nextState = state.data.redoStack.pop();
+        state.data.current = nextState.data;
+        state.ui.deletedRows = nextState.deletedRows || [];
+        
         renderTable();
         markAsModified();
     }
@@ -565,7 +668,11 @@ function updateUndoRedoButtons() {
 
 // Modified State
 function markAsModified() {
-    state.ui.hasUnsavedChanges = JSON.stringify(state.data.current) !== JSON.stringify(state.data.original);
+    // Check if data has changed OR if there are deleted rows
+    const dataChanged = JSON.stringify(state.data.current) !== JSON.stringify(state.data.original);
+    const hasDeletedRows = state.ui.deletedRows.length > 0;
+    
+    state.ui.hasUnsavedChanges = dataChanged || hasDeletedRows;
     updateUnsavedIndicator();
     // Reset display order when data is modified to avoid confusion
     state.data.displayOrder = [];
@@ -597,8 +704,6 @@ function showDeleteModal(index) {
     state.ui.deleteRowIndex = index;
     const row = state.data.current[index];
     elements.deleteRowInfo.textContent = `${row.cognome} - Citofono ${row.citofono}`;
-    elements.deleteConfirmInput.value = '';
-    elements.confirmDeleteBtn.disabled = true;
     elements.deleteModal.classList.add('show');
 }
 
@@ -659,7 +764,18 @@ function generateDiff() {
     elements.diffContainer.innerHTML = '';
     const changes = getChanges();
     
-    // Display removed entries
+    // Display entries marked for deletion
+    state.ui.deletedRows.forEach(index => {
+        if (state.data.current[index]) {
+            const entry = state.data.current[index];
+            const div = document.createElement('div');
+            div.className = 'diff-removed';
+            div.textContent = `- ${entry.cognome};${entry.citofono}`;
+            elements.diffContainer.appendChild(div);
+        }
+    });
+    
+    // Display removed entries (that were in original but not in current)
     changes.removed.forEach(entry => {
         const div = document.createElement('div');
         div.className = 'diff-removed';
@@ -688,7 +804,10 @@ function generateDiff() {
         elements.diffContainer.appendChild(divNew);
     });
     
-    if (changes.removed.length === 0 && changes.added.length === 0 && changes.modified.length === 0) {
+    // Check if there are any changes including deleted rows
+    const hasDeletedRows = state.ui.deletedRows.length > 0;
+    if (changes.removed.length === 0 && changes.added.length === 0 && 
+        changes.modified.length === 0 && !hasDeletedRows) {
         elements.diffContainer.innerHTML = '<div>Nessuna modifica rilevata</div>';
     }
 }
@@ -740,6 +859,9 @@ function generateCommitMessage() {
     const changes = getChanges();
     const parts = [];
     
+    // Count deleted rows
+    const deletedEntries = state.ui.deletedRows.map(index => state.data.current[index]).filter(Boolean);
+    
     if (changes.added.length > 0) {
         if (changes.added.length === 1) {
             parts.push(`Aggiunto: ${changes.added[0].cognome} (int ${changes.added[0].citofono})`);
@@ -748,11 +870,14 @@ function generateCommitMessage() {
         }
     }
     
-    if (changes.removed.length > 0) {
-        if (changes.removed.length === 1) {
-            parts.push(`Rimosso: ${changes.removed[0].cognome} (int ${changes.removed[0].citofono})`);
+    // Combine removed + deleted rows
+    const totalRemoved = changes.removed.length + deletedEntries.length;
+    if (totalRemoved > 0) {
+        if (totalRemoved === 1) {
+            const removedEntry = deletedEntries[0] || changes.removed[0];
+            parts.push(`Rimosso: ${removedEntry.cognome} (int ${removedEntry.citofono})`);
         } else {
-            parts.push(`Rimossi ${changes.removed.length} citofoni`);
+            parts.push(`Rimossi ${totalRemoved} citofoni`);
         }
     }
     
@@ -783,16 +908,7 @@ function initEventListeners() {
         if (e.key === 'Enter') login();
     });
     
-    // Delete confirmation input
-    elements.deleteConfirmInput.addEventListener('input', function() {
-        if (this.value.toUpperCase() === 'ELIMINA') {
-            elements.confirmDeleteBtn.disabled = false;
-            this.classList.remove('error');
-        } else {
-            elements.confirmDeleteBtn.disabled = true;
-            if (this.value.length > 0) this.classList.add('error');
-        }
-    });
+    // Delete confirmation input - removed as it's no longer needed
     
     // Search input
     elements.searchInput.addEventListener('keyup', filterTable);
@@ -848,6 +964,7 @@ window.cancelRowEdit = cancelRowEdit;
 window.showDeleteModal = showDeleteModal;
 window.closeDeleteModal = closeDeleteModal;
 window.confirmDelete = confirmDelete;
+window.restoreRow = restoreRow;
 window.showSaveModal = showSaveModal;
 window.closeSaveModal = closeSaveModal;
 window.confirmSave = confirmSave;
@@ -859,9 +976,48 @@ window.redo = redo;
 window.filterTable = filterTable;
 window.sortData = sortData;
 
+// Check for existing session
+function checkExistingSession() {
+    const savedSession = sessionStorage.getItem('adminSession');
+    
+    if (savedSession) {
+        try {
+            const session = JSON.parse(savedSession);
+            const loginTime = new Date(session.loginTime);
+            const now = new Date();
+            const elapsed = now - loginTime;
+            
+            // Check if session is still valid (within 30 minutes)
+            if (elapsed < CONFIG.SESSION_TIMEOUT) {
+                // Restore session
+                state.github = session.github;
+                state.session.isLoggedIn = true;
+                state.session.loginTime = loginTime;
+                
+                startSessionTimer();
+                showAdminPanel();
+                loadData();
+                
+                return true;
+            } else {
+                // Session expired, clear it
+                sessionStorage.removeItem('adminSession');
+            }
+        } catch (e) {
+            // Invalid session data, clear it
+            sessionStorage.removeItem('adminSession');
+        }
+    }
+    
+    return false;
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     initElements();
     initEventListeners();
     setInterval(updateSessionInfo, 1000);
+    
+    // Check for existing session
+    checkExistingSession();
 });

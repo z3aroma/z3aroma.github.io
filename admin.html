@@ -34,7 +34,7 @@
             </div>
             
             <div class="controls">
-                <button class="btn btn-add" onclick="addRow()">➕ Aggiungi Riga</button>
+                <button class="btn btn-add" onclick="addRow()">➕ Aggiungi Citofono</button>
                 <button class="btn btn-save" onclick="showSaveModal()">💾 Salva Modifiche</button>
                 <span class="unsaved-indicator" id="unsavedIndicator">⚠️ Modifiche non salvate</span>
                 <button class="btn btn-undo" id="undoBtn" onclick="undo()" disabled>↶ Annulla</button>
@@ -73,14 +73,13 @@
                 <h2>Conferma Eliminazione</h2>
             </div>
             <div class="modal-body">
-                <p>Stai per eliminare la riga:</p>
+                <p>Vuoi eliminare questa riga?</p>
                 <p><strong id="deleteRowInfo"></strong></p>
-                <p>Per confermare, digita <strong>ELIMINA</strong> nel campo sottostante:</p>
-                <input type="text" class="confirmation-input" id="deleteConfirmInput" placeholder="Digita ELIMINA">
+                <p>La riga sarà marcata per l'eliminazione e verrà rimossa definitivamente quando salverai le modifiche.</p>
             </div>
             <div class="modal-footer">
                 <button class="modal-btn modal-btn-cancel" onclick="closeDeleteModal()">Annulla</button>
-                <button class="modal-btn modal-btn-confirm" id="confirmDeleteBtn" onclick="confirmDelete()" disabled>Elimina</button>
+                <button class="modal-btn modal-btn-confirm" id="confirmDeleteBtn" onclick="confirmDelete()">Elimina</button>
             </div>
         </div>
     </div>
