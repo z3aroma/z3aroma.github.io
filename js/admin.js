@@ -700,49 +700,38 @@ function getChanges() {
         modified: []
     };
     
-    // Sort both arrays by citofono to ensure consistent order
-    const origSorted = [...state.data.original].sort((a, b) => {
-        const numA = parseInt(a.citofono) || 0;
-        const numB = parseInt(b.citofono) || 0;
-        return numA - numB;
+    // Create a map of original records by cognome+citofono key
+    const origMap = new Map();
+    state.data.original.forEach(row => {
+        const key = `${row.cognome}|${row.citofono}`;
+        origMap.set(key, row);
     });
     
-    const currSorted = [...state.data.current].sort((a, b) => {
-        const numA = parseInt(a.citofono) || 0;
-        const numB = parseInt(b.citofono) || 0;
-        return numA - numB;
+    // Create a map of current records by cognome+citofono key
+    const currMap = new Map();
+    state.data.current.forEach(row => {
+        const key = `${row.cognome}|${row.citofono}`;
+        currMap.set(key, row);
     });
     
-    // Compare arrays position by position
-    const minLength = Math.min(origSorted.length, currSorted.length);
-    
-    // Check for modifications in existing positions
-    for (let i = 0; i < minLength; i++) {
-        const orig = origSorted[i];
-        const curr = currSorted[i];
-        
-        if (orig.cognome !== curr.cognome || orig.citofono !== curr.citofono) {
-            changes.modified.push({
-                old: orig,
-                new: curr,
-                position: i + 1  // 1-based position for display
-            });
+    // Find removed entries (in original but not in current)
+    state.data.original.forEach(row => {
+        const key = `${row.cognome}|${row.citofono}`;
+        if (!currMap.has(key)) {
+            changes.removed.push(row);
         }
-    }
+    });
     
-    // If current is longer, those are additions
-    if (currSorted.length > origSorted.length) {
-        for (let i = origSorted.length; i < currSorted.length; i++) {
-            changes.added.push(currSorted[i]);
+    // Find added entries (in current but not in original)
+    state.data.current.forEach(row => {
+        const key = `${row.cognome}|${row.citofono}`;
+        if (!origMap.has(key)) {
+            changes.added.push(row);
         }
-    }
+    });
     
-    // If original is longer, those are removals
-    if (origSorted.length > currSorted.length) {
-        for (let i = currSorted.length; i < origSorted.length; i++) {
-            changes.removed.push(origSorted[i]);
-        }
-    }
+    // Note: We don't track "modified" because if cognome OR citofono changes,
+    // it's effectively a remove+add operation in our system
     
     return changes;
 }
