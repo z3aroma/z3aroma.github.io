@@ -172,57 +172,55 @@
         }
         
         .sort-button {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
             border-radius: 50%;
             cursor: pointer;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 1.1rem;
-            font-weight: 600;
+            color: #667eea;
+            font-size: 1.3rem;
+            font-weight: 700;
             position: relative;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         
         .sort-button:active {
             transform: scale(0.95);
-            background: rgba(255, 255, 255, 0.3);
         }
         
         .sort-button.active {
-            background: rgba(255, 255, 255, 0.95);
-            color: #667eea;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
-        .sort-button .sort-indicator {
-            position: absolute;
-            top: -2px;
-            right: -2px;
-            font-size: 0.6rem;
-            background: white;
-            border-radius: 50%;
-            width: 14px;
-            height: 14px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            color: #667eea;
-            font-weight: bold;
+        .sort-button:not(.active) {
+            background: rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.95);
         }
         
-        .sort-button.active .sort-indicator {
-            display: flex;
+        .sort-arrow {
+            font-size: 0.7rem;
+            line-height: 0.5;
+            margin-top: -3px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
         
-        .sort-button.active .sort-indicator.asc::after {
+        .sort-button.active .sort-arrow {
+            opacity: 1;
+        }
+        
+        .sort-button.active .sort-arrow.asc::after {
             content: "↑";
         }
         
-        .sort-button.active .sort-indicator.desc::after {
+        .sort-button.active .sort-arrow.desc::after {
             content: "↓";
         }
         
@@ -439,17 +437,17 @@
             <div class="search-container">
                 <div class="search-wrapper">
                     <span class="search-icon"></span>
-                    <input type="text" id="searchInput" placeholder="Cerca per nome o citofono...">
+                    <input type="text" id="searchInput" placeholder="Cerca...">
                     <button class="clear-button" id="clearButton" onclick="clearSearch()"></button>
                 </div>
                 <div class="sort-buttons">
                     <button class="sort-button active" data-sort="surname" title="Ordina per cognome">
-                        A
-                        <span class="sort-indicator asc"></span>
+                        <span>A</span>
+                        <span class="sort-arrow asc"></span>
                     </button>
                     <button class="sort-button" data-sort="intercom" title="Ordina per citofono">
-                        #
-                        <span class="sort-indicator"></span>
+                        <span>#</span>
+                        <span class="sort-arrow"></span>
                     </button>
                 </div>
             </div>
@@ -577,8 +575,8 @@
 
             $('.sort-button').removeClass('active');
             $(this).addClass('active');
-            $('.sort-indicator').removeClass('asc desc');
-            $(this).find('.sort-indicator').addClass(currentSort.order);
+            $('.sort-arrow').removeClass('asc desc');
+            $(this).find('.sort-arrow').addClass(currentSort.order);
 
             renderList();
         });
