@@ -7,93 +7,224 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-csv/1.0.21/jquery.csv.min.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
+        
         .container {
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background-color: #fff;
+            background-color: #ffffff;
+            max-width: 480px;
+            margin: 0 auto;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1);
+            position: relative;
         }
+        
         header {
             position: sticky;
             top: 0;
             z-index: 10;
-            background-color: #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
         }
+        
         h1 {
-            font-size: 1.25rem;
-            font-weight: bold;
+            font-size: 1.5rem;
+            font-weight: 700;
             text-align: center;
-            padding: 1rem 0;
+            padding: 1.25rem 0 0.75rem;
             margin: 0;
+            color: #ffffff;
+            letter-spacing: 0.5px;
         }
+        
         .search-container {
             display: flex;
             align-items: center;
-            padding: 0.5rem 1rem;
-            background-color: #f0f0f0;
+            padding: 0 1rem 1rem;
+            position: relative;
         }
+        
+        .search-wrapper {
+            width: 100%;
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .search-wrapper:focus-within {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8e8e93;
+            pointer-events: none;
+        }
+        
+        .search-icon::before {
+            content: "🔍";
+            font-size: 1rem;
+        }
+        
         #searchInput {
             width: 100%;
             border: none;
             background-color: transparent;
             outline: none;
             font-size: 1rem;
-            padding: 0.5rem;
+            padding: 0.875rem 1rem 0.875rem 2.5rem;
+            color: #333;
+            font-weight: 400;
         }
+        
+        #searchInput::placeholder {
+            color: #8e8e93;
+        }
+        
         .sort-container {
             display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 1rem;
-            border-bottom: 1px solid #e0e0e0;
+            justify-content: space-around;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
         }
+        
         .sort-button {
-            background: none;
-            border: none;
-            font-size: 0.875rem;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            padding: 0.625rem 1.25rem;
+            font-size: 0.9rem;
             font-weight: 500;
-            color: #333;
+            color: #495057;
             cursor: pointer;
             display: flex;
             align-items: center;
+            transition: all 0.2s ease;
+            min-height: 44px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
+        
+        .sort-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 0 2px rgba(0,0,0,0.1);
+        }
+        
+        .sort-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border-color: transparent;
+        }
+        
+        .sort-icon {
+            margin-left: 0.5rem;
+            display: inline-flex;
+            transition: transform 0.2s ease;
+        }
+        
         .sort-icon::after {
-            content: "▼";
-            font-size: 0.75rem;
-            margin-left: 0.25rem;
+            content: "↓";
+            font-size: 0.8rem;
         }
+        
         .sort-icon.asc::after {
-            content: "▲";
+            content: "↑";
         }
+        
         #intercomList {
             flex: 1;
             overflow-y: auto;
+            background-color: #ffffff;
+            -webkit-overflow-scrolling: touch;
         }
+        
+        #intercomList::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        #intercomList::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        #intercomList::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 2px;
+        }
+        
         .intercom-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 60px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease forwards;
         }
-        .intercom-item:nth-child(odd) {
-            background-color: #f9f9f9;
+        
+        .intercom-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(102, 126, 234, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
         }
-        .intercom-item:nth-child(even) {
-            background-color: #fff;
+        
+        .intercom-item:active::before {
+            width: 300px;
+            height: 300px;
         }
+        
+        .intercom-item:active {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
         .intercom-item span:first-child {
             font-weight: 500;
+            font-size: 1rem;
+            color: #2c3e50;
+            z-index: 1;
+            position: relative;
         }
+        
         .intercom-item span:last-child {
-            color: #666;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            z-index: 1;
+            position: relative;
         }
 
         /* Popup styles */
@@ -104,60 +235,161 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             z-index: 99;
             opacity: 0;
             transition: opacity 0.3s ease;
         }
+        
         .popup {
             display: none;
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            bottom: 0;
+            left: 0;
+            right: 0;
             background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            padding: 2rem 1.5rem;
+            border-top-left-radius: 25px;
+            border-top-right-radius: 25px;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
             z-index: 100;
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 480px;
+            margin: 0 auto;
         }
+        
         .popup.show {
             display: block;
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
+            transform: translateY(0);
         }
+        
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
         .popup h2 {
             margin: 0;
             font-size: 1.5rem;
+            color: #2c3e50;
+            font-weight: 600;
         }
-        .popup p {
-            font-size: 1rem;
-            margin: 10px 0;
+        
+        .popup-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.2rem;
+            color: #666;
         }
-        .popup button {
-            margin-top: 10px;
-            padding: 5px 10px;
-            background-color: #007bff;
+        
+        .popup-close:active {
+            background: #e0e0e0;
+            transform: scale(0.95);
+        }
+        
+        .popup-content {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .popup-icon {
+            font-size: 2.5rem;
+        }
+        
+        .popup-info {
+            flex: 1;
+        }
+        
+        .popup-label {
+            font-size: 0.875rem;
+            color: #8e8e93;
+            margin-bottom: 0.25rem;
+        }
+        
+        .popup-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .popup-action {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #fff;
             border: none;
-            border-radius: 5px;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
-        .popup button:hover {
-            background-color: #0056b3;
+        
+        .popup-action:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }
+        
         .popup-overlay.show {
             display: block;
             opacity: 1;
         }
 
-        /* Mobile responsiveness */
-        @media (max-width: 600px) {
-            .popup {
-                width: 90%;
-                padding: 15px;
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .container {
+                max-width: 100%;
+                box-shadow: none;
+            }
+        }
+        
+        @media (hover: hover) {
+            .sort-button:hover {
+                background: #f8f9fa;
+                transform: translateY(-1px);
+                box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            }
+            
+            .sort-button.active:hover {
+                background: linear-gradient(135deg, #7c8ff0 0%, #8a5bb0 100%);
+            }
+            
+            .intercom-item:hover {
+                background-color: #fafbfc;
+            }
+        }
+        
+        /* Loading animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
     </style>
@@ -167,11 +399,14 @@
         <header>
             <h1>Elenco citofoni Z3A</h1>
             <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Cerca...">
+                <div class="search-wrapper">
+                    <span class="search-icon"></span>
+                    <input type="text" id="searchInput" placeholder="Cerca per nome o citofono...">
+                </div>
             </div>
             <div class="sort-container">
-                <button class="sort-button" data-sort="surname">
-                    Cognome <span class="sort-icon"></span>
+                <button class="sort-button active" data-sort="surname">
+                    Cognome <span class="sort-icon asc"></span>
                 </button>
                 <button class="sort-button" data-sort="intercom">
                     Citofono <span class="sort-icon"></span>
@@ -184,9 +419,18 @@
     <!-- Popup structure -->
     <div class="popup-overlay" id="popupOverlay" onclick="closePopup()"></div>
     <div class="popup" id="popup">
-        <h2 id="popupSurname"></h2>
-        <p id="popupIntercom"></p>
-        <button onclick="closePopup()">Chiudi</button>
+        <div class="popup-header">
+            <h2 id="popupSurname"></h2>
+            <button class="popup-close" onclick="closePopup()">✕</button>
+        </div>
+        <div class="popup-content">
+            <span class="popup-icon">📞</span>
+            <div class="popup-info">
+                <div class="popup-label">Numero Citofono</div>
+                <div class="popup-value" id="popupIntercom"></div>
+            </div>
+        </div>
+        <button class="popup-action" onclick="closePopup()">Chiudi</button>
     </div>
 
     <script>
@@ -245,14 +489,18 @@
 
         function showPopup(surname, intercom) {
             $('#popupSurname').text(surname);
-            $('#popupIntercom').text('Citofono: ' + intercom);
+            $('#popupIntercom').text(intercom);
             $('#popupOverlay').addClass('show');
-            $('#popup').addClass('show');
+            setTimeout(() => {
+                $('#popup').addClass('show');
+            }, 10);
         }
 
         function closePopup() {
-            $('#popupOverlay').removeClass('show');
             $('#popup').removeClass('show');
+            setTimeout(() => {
+                $('#popupOverlay').removeClass('show');
+            }, 300);
         }
 
         $('.sort-button').on('click', function() {
@@ -264,6 +512,8 @@
                 currentSort.order = 'asc';
             }
 
+            $('.sort-button').removeClass('active');
+            $(this).addClass('active');
             $('.sort-icon').removeClass('asc desc');
             $(this).find('.sort-icon').addClass(currentSort.order);
 
