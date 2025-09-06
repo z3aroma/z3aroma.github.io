@@ -75,6 +75,7 @@
         .search-container {
             display: flex;
             align-items: center;
+            gap: 0.5rem;
             padding: 0 1rem 1rem;
             position: relative;
             transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -85,7 +86,7 @@
         }
         
         .search-wrapper {
-            width: 100%;
+            flex: 1;
             position: relative;
             background-color: rgba(255, 255, 255, 0.95);
             border-radius: 25px;
@@ -165,53 +166,64 @@
             color: #8e8e93;
         }
         
-        .sort-container {
+        .sort-buttons {
             display: flex;
-            justify-content: space-around;
-            padding: 1rem;
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
+            gap: 0.5rem;
         }
         
         .sort-button {
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-            border-radius: 20px;
-            padding: 0.625rem 1.25rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #495057;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
             transition: all 0.2s ease;
-            min-height: 44px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-weight: 600;
+            position: relative;
         }
         
         .sort-button:active {
-            background: #f0f0f0;
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.3);
         }
         
         .sort-button.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
-            border-color: transparent;
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
         }
         
-        .sort-icon {
-            margin-left: 0.5rem;
-            display: inline-flex;
-            transition: transform 0.2s ease;
+        .sort-button .sort-indicator {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            font-size: 0.6rem;
+            background: white;
+            border-radius: 50%;
+            width: 14px;
+            height: 14px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: #667eea;
+            font-weight: bold;
         }
         
-        .sort-icon::after {
-            content: "↓";
-            font-size: 0.8rem;
+        .sort-button.active .sort-indicator {
+            display: flex;
         }
         
-        .sort-icon.asc::after {
+        .sort-button.active .sort-indicator.asc::after {
             content: "↑";
+        }
+        
+        .sort-button.active .sort-indicator.desc::after {
+            content: "↓";
         }
         
         #intercomList {
@@ -430,14 +442,16 @@
                     <input type="text" id="searchInput" placeholder="Cerca per nome o citofono...">
                     <button class="clear-button" id="clearButton" onclick="clearSearch()"></button>
                 </div>
-            </div>
-            <div class="sort-container">
-                <button class="sort-button active" data-sort="surname">
-                    Cognome <span class="sort-icon asc"></span>
-                </button>
-                <button class="sort-button" data-sort="intercom">
-                    Citofono <span class="sort-icon"></span>
-                </button>
+                <div class="sort-buttons">
+                    <button class="sort-button active" data-sort="surname" title="Ordina per cognome">
+                        A
+                        <span class="sort-indicator asc"></span>
+                    </button>
+                    <button class="sort-button" data-sort="intercom" title="Ordina per citofono">
+                        #
+                        <span class="sort-indicator"></span>
+                    </button>
+                </div>
             </div>
         </header>
         <div id="intercomList"></div>
@@ -552,7 +566,7 @@
             $('#searchInput').focus();
         }
 
-        $('.sort-button').on('click', function() {
+        $(document).on('click', '.sort-button', function() {
             const field = $(this).data('sort');
             if (currentSort.field === field) {
                 currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
@@ -563,8 +577,8 @@
 
             $('.sort-button').removeClass('active');
             $(this).addClass('active');
-            $('.sort-icon').removeClass('asc desc');
-            $(this).find('.sort-icon').addClass(currentSort.order);
+            $('.sort-indicator').removeClass('asc desc');
+            $(this).find('.sort-indicator').addClass(currentSort.order);
 
             renderList();
         });
