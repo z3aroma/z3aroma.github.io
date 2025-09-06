@@ -137,7 +137,6 @@
         
         .clear-button:active {
             background-color: #8e8e93;
-            transform: translateY(-50%) scale(0.9);
         }
         
         .clear-button::before {
@@ -191,8 +190,7 @@
         }
         
         .sort-button:active {
-            transform: scale(0.98);
-            box-shadow: 0 0 2px rgba(0,0,0,0.1);
+            background: #f0f0f0;
         }
         
         .sort-button.active {
@@ -220,7 +218,7 @@
             flex: 1;
             overflow-y: auto;
             background-color: #ffffff;
-            -webkit-overflow-scrolling: touch;
+            padding-bottom: 100px;
         }
         
         #intercomList::-webkit-scrollbar {
@@ -243,53 +241,24 @@
             padding: 1rem 1.25rem;
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
-            transition: all 0.2s ease;
             min-height: 60px;
-            position: relative;
-            overflow: hidden;
-            animation: fadeIn 0.3s ease forwards;
-        }
-        
-        .intercom-item::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(102, 126, 234, 0.1);
-            transform: translate(-50%, -50%);
-            transition: width 0.5s, height 0.5s;
-        }
-        
-        .intercom-item:active::before {
-            width: 300px;
-            height: 300px;
+            background-color: #ffffff;
         }
         
         .intercom-item:active {
-            background-color: rgba(102, 126, 234, 0.05);
+            background-color: #f0f0f0;
         }
         
         .intercom-item span:first-child {
             font-weight: 500;
             font-size: 1rem;
             color: #2c3e50;
-            z-index: 1;
-            position: relative;
         }
         
         .intercom-item span:last-child {
             font-size: 1.1rem;
             font-weight: 600;
             color: #667eea;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            z-index: 1;
-            position: relative;
         }
 
         /* Popup styles */
@@ -446,17 +415,6 @@
             }
         }
         
-        /* Loading animation */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
     </style>
 </head>
 <body>
